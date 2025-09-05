@@ -20,7 +20,7 @@ services:
     ports:
       - "6379:6379"
 
-  api:
+  autostore_api:
     build: ./autostore-api
     container_name: autostore_api
     restart: always
