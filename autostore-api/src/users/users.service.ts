@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -13,8 +18,18 @@ export class UsersService {
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
-    const newUser = this.userRepository.create(createUserDto);
-    return await this.userRepository.save(newUser);
+    try {
+      const newUser = this.userRepository.create(createUserDto);
+      return await this.userRepository.save(newUser);
+    } catch (error) {
+      if (error.code === '23505') {
+        // 23505 = unique_violation en Postgres
+        throw new BadRequestException(
+          `El correo ${createUserDto.email} ya está en uso`,
+        );
+      }
+      throw error; // deja que el filtro global maneje otros casos
+    }
   }
 
   async findAll(): Promise<User[]> {
@@ -30,7 +45,7 @@ export class UsersService {
   }
 
   async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
-    const user = await this.findOne(id); // reutilizamos el findOne para validar
+    const user = await this.findOne(id);
     const updated = Object.assign(user, updateUserDto);
     return await this.userRepository.save(updated);
   }

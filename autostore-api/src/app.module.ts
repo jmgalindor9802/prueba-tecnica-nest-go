@@ -8,6 +8,7 @@ import { UsersModule } from './users/users.module';
 @Module({
   imports: [
     // Configuración global de variables de entorno
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     ConfigModule.forRoot({ isGlobal: true }),
 
     // Configuración de TypeORM con variables de entorno
