@@ -77,6 +77,13 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^@nestjs/swagger$": "<rootDir>/test/stubs/nestjs-swagger.ts",
+      "^@nestjs/typeorm$": "<rootDir>/test/stubs/nestjs-typeorm.ts",
+      "^typeorm$": "<rootDir>/test/stubs/typeorm.ts",
+      "^class-transformer$": "<rootDir>/test/stubs/class-transformer.ts",
+      "^class-validator$": "<rootDir>/test/stubs/class-validator.ts"
+    }
   }
 }
