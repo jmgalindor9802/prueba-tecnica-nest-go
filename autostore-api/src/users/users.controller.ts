@@ -12,6 +12,7 @@ import {
   ClassSerializerInterceptor,
   UseInterceptors,
   DefaultValuePipe,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -23,12 +24,22 @@ import {
   ApiConflictResponse,
   ApiNotFoundResponse,
   ApiParam,
+  ApiHeader,
 } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { Roles } from '../common/decorators/roles.decorator';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Role } from './entities/role.enum';
 
 @ApiTags('users')
+@ApiHeader({
+  name: 'x-role',
+  required: true,
+  description: 'Rol del usuario que hace la solicitud: admin o client',
+})
+@UseGuards(RolesGuard)
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('users')
 export class UsersController {
@@ -47,6 +58,7 @@ export class UsersController {
   }
 
   @Get()
+  @Roles(Role.Admin)
   @ApiOperation({ summary: 'Listar todos los usuarios' })
   @ApiOkResponse({ description: 'Lista de usuarios retornada.' })
   async findAll(
@@ -57,6 +69,7 @@ export class UsersController {
   }
 
   @Get(':id')
+  @Roles(Role.Admin, Role.Client)
   @ApiOperation({ summary: 'Obtener un usuario por ID' })
   @ApiParam({ name: 'id', type: Number })
   @ApiOkResponse({ description: 'Usuario encontrado.' })
@@ -66,6 +79,7 @@ export class UsersController {
   }
 
   @Patch(':id')
+  @Roles(Role.Admin, Role.Client)
   @ApiOperation({ summary: 'Actualizar un usuario' })
   @ApiParam({ name: 'id', type: Number })
   @ApiOkResponse({ description: 'Usuario actualizado.' })
@@ -78,6 +92,7 @@ export class UsersController {
   }
 
   @Delete(':id')
+   @Roles(Role.Admin)
   @ApiOperation({ summary: 'Eliminar un usuario' })
   @ApiParam({ name: 'id', type: Number })
   @ApiOkResponse({ description: 'Usuario eliminado.' })
