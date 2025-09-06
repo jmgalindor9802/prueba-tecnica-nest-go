@@ -4,3 +4,8 @@ export const MinLength = () => () => {};
 export const IsString = () => () => {};
 export const IsEnum = () => () => {};
 export const IsOptional = () => () => {};
+export const IsInt = () => () => {};
+export const Min = () => () => {};
+export const IsNumber = () => () => {};
+export const IsPositive = () => () => {};
+export const Length = () => () => {};
