@@ -5,5 +5,13 @@
   "testRegex": ".e2e-spec.ts$",
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
+      },
+  "moduleNameMapper": {
+    "^@nestjs/config$": "<rootDir>/../src/test/stubs/nestjs-config.ts",
+    "^@nestjs/typeorm$": "<rootDir>/../src/test/stubs/nestjs-typeorm.ts",
+    "^@nestjs/swagger$": "<rootDir>/../src/test/stubs/nestjs-swagger.ts",
+    "^typeorm$": "<rootDir>/../src/test/stubs/typeorm.ts",
+    "^class-transformer$": "<rootDir>/../src/test/stubs/class-transformer.ts",
+    "^class-validator$": "<rootDir>/../src/test/stubs/class-validator.ts"
   }
 }
