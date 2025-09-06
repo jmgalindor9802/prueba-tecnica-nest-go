@@ -9,6 +9,10 @@ import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
+import { randomBytes, scrypt as _scrypt } from 'crypto';
+import { promisify } from 'util';
+
+const scrypt = promisify(_scrypt);
 
 @Injectable()
 export class UsersService {
@@ -17,12 +21,22 @@ export class UsersService {
     private readonly userRepository: Repository<User>,
   ) {}
 
+  private async hashPassword(password: string): Promise<string> {
+    const salt = randomBytes(16).toString('hex');
+    const hash = (await scrypt(password, salt, 32)) as Buffer;
+    return `${salt}:${hash.toString('hex')}`;
+  }
+
   async create(createUserDto: CreateUserDto): Promise<User> {
     try {
-      const newUser = this.userRepository.create(createUserDto);
+      const hashed = await this.hashPassword(createUserDto.password);
+      const newUser = this.userRepository.create({
+        ...createUserDto,
+        password: hashed,
+      });
       return await this.userRepository.save(newUser);
-    } catch (error) {
-      if (error.code === '23505') {
+    } catch (error: any) {
+      if (error?.code === '23505') {
         // 23505 = unique_violation en Postgres
         throw new BadRequestException(
           `El correo ${createUserDto.email} ya está en uso`,
@@ -32,8 +46,11 @@ export class UsersService {
     }
   }
 
-  async findAll(): Promise<User[]> {
-    return await this.userRepository.find();
+  async findAll(page = 1, limit = 10): Promise<User[]> {
+    return await this.userRepository.find({
+      skip: (page - 1) * limit,
+      take: limit,
+    });
   }
 
   async findOne(id: number): Promise<User> {
@@ -46,12 +63,31 @@ export class UsersService {
 
   async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findOne(id);
-    const updated = Object.assign(user, updateUserDto);
-    return await this.userRepository.save(updated);
+    if (updateUserDto.password) {
+      updateUserDto.password = await this.hashPassword(updateUserDto.password);
+    }
+    const allowed: (keyof UpdateUserDto)[] = ['email', 'name', 'password'];
+    for (const field of allowed) {
+      if (updateUserDto[field] !== undefined) {
+        (user as any)[field] = updateUserDto[field];
+      }
+    }
+    try {
+      return await this.userRepository.save(user);
+    } catch (error: any) {
+      if (error?.code === '23505') {
+        throw new BadRequestException(
+          `El correo ${updateUserDto.email} ya está en uso`,
+        );
+      }
+      throw error;
+    }
   }
 
   async remove(id: number): Promise<void> {
-    const user = await this.findOne(id);
-    await this.userRepository.remove(user);
+    const result = await this.userRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`Usuario con id ${id} no encontrado`);
+    }
   }
 }
