@@ -1,5 +1,14 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
+class ColumnNumericTransformer {
+  to(value: number | null): number | null {
+    return value;
+  }
+  from(value: string | null): number | null {
+    return value === null ? null : parseFloat(value);
+  }
+}
+
 @Entity('vehicles')
 export class Vehicle {
   @PrimaryGeneratedColumn()

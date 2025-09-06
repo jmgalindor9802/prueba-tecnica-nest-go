@@ -22,6 +22,7 @@ import {
   ApiNotFoundResponse,
   ApiHeader,
   ApiParam,
+   ApiQuery,
 } from '@nestjs/swagger';
 import { VehiclesService } from './vehicles.service';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
@@ -54,6 +55,20 @@ export class VehiclesController {
   @Get()
   @ApiOperation({ summary: 'Listar todos los vehículos' })
   @ApiOkResponse({ description: 'Lista de vehículos retornada.' })
+    @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Número de página',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Cantidad de resultados por página (máximo 50)',
+    example: 10,
+  })
   async findAll(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,

@@ -7,6 +7,7 @@ import {
   IsNumber,
   IsPositive,
   Length,
+   IsBoolean,
 } from 'class-validator';
 
 export class UpdateVehicleDto {
@@ -57,5 +58,6 @@ export class UpdateVehicleDto {
     description: 'Disponibilidad del vehículo',
   })
   @IsOptional()
+   @IsBoolean()
   isAvailable?: boolean;
 }

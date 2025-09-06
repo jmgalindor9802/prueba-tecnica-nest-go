@@ -35,6 +35,7 @@ export class VehiclesService {
     page = 1,
     limit = 10,
   ): Promise<{ data: Vehicle[]; total: number; page: number; limit: number }> {
+    limit = Math.min(limit, 50);
     const [data, total] = await this.vehicleRepository.findAndCount({
       skip: (page - 1) * limit,
       take: limit,
@@ -55,23 +56,9 @@ export class VehiclesService {
     updateVehicleDto: UpdateVehicleDto,
   ): Promise<Vehicle> {
     const vehicle = await this.findOne(id);
-    const allowed = [
-      'brand',
-      'model',
-      'year',
-      'price',
-      'vin',
-      'description',
-      'isAvailable',
-    ] as (keyof UpdateVehicleDto)[];
-
-    for (const field of allowed) {
-      if (updateVehicleDto[field] !== undefined) {
-        (vehicle as any)[field] = updateVehicleDto[field];
-      }
-    }
+    const merged = this.vehicleRepository.merge(vehicle, updateVehicleDto);
     try {
-      return await this.vehicleRepository.save(vehicle);
+      return await this.vehicleRepository.save(merged);
     } catch (error: any) {
       if (error?.code === '23505') {
         throw new BadRequestException(

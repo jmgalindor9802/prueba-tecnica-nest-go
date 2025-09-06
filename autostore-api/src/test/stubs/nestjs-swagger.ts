@@ -12,3 +12,4 @@ export const ApiParam = dummy;
 export const ApiHeader = dummy;
 export const ApiProperty = dummy;
 export const ApiPropertyOptional = dummy;
+export const ApiQuery = dummy;

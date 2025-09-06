@@ -14,6 +14,7 @@ describe('VehiclesService', () => {
       findAndCount: jest.fn(),
       findOne: jest.fn(),
       delete: jest.fn(),
+      merge: jest.fn(),
     } as unknown as jest.Mocked<Repository<Vehicle>>;
 
     service = new VehiclesService(repository as any);
@@ -64,12 +65,14 @@ describe('VehiclesService', () => {
   it('should update vehicle fields', async () => {
     const vehicle = { id: 1, brand: 'Toyota' } as Vehicle;
     jest.spyOn(service, 'findOne').mockResolvedValue(vehicle);
+    repository.merge.mockImplementation((v, dto) => ({ ...v, ...dto } as Vehicle));
     repository.save.mockImplementation(async (v) => v as Vehicle);
 
     const result = await service.update(1, { brand: 'Honda' });
 
+    expect(repository.merge).toHaveBeenCalledWith(vehicle, { brand: 'Honda' });
     expect(result.brand).toBe('Honda');
-    expect(repository.save).toHaveBeenCalled();
+    expect(repository.save).toHaveBeenCalledWith({ id: 1, brand: 'Honda' });
   });
 
   it('should delete vehicle', async () => {

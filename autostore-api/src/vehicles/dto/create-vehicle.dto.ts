@@ -8,6 +8,7 @@ import {
   IsPositive,
   Length,
   IsOptional,
+    IsBoolean,
 } from 'class-validator';
 
 export class CreateVehicleDto {
@@ -46,4 +47,12 @@ export class CreateVehicleDto {
   @IsOptional()
   @IsString()
   description?: string;
+  
+   @ApiPropertyOptional({
+    example: true,
+    description: 'Disponibilidad del vehículo',
+  })
+  @IsOptional()
+  @IsBoolean()
+  isAvailable?: boolean;
 }

@@ -9,3 +9,4 @@ export const Min = () => () => {};
 export const IsNumber = () => () => {};
 export const IsPositive = () => () => {};
 export const Length = () => () => {};
+export const IsBoolean = () => () => {};
