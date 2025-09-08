@@ -5,6 +5,9 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { VehiclesModule } from './vehicles/vehicles.module';
+import { CacheModule } from '@nestjs/cache-manager';
+import Keyv from 'keyv';
+import KeyvRedis from '@keyv/redis';
 
 @Module({
   imports: [
@@ -19,23 +22,34 @@ import { VehiclesModule } from './vehicles/vehicles.module';
         TypeOrmModule.forRootAsync({
           inject: [ConfigService],
 
-           useFactory: (config: ConfigService) => ({
-              type: 'postgres',
-              host: config.get<string>('DB_HOST'),
-              port: config.get<number>('DB_PORT'),
-              username: config.get<string>('DB_USER'),
-              password: config.get<string>('DB_PASS'),
-              database: config.get<string>('DB_NAME'),
-              autoLoadEntities: true,
-              synchronize: true,
-            }),
+          useFactory: (config: ConfigService) => ({
+            type: 'postgres',
+            host: config.get<string>('DB_HOST'),
+            port: config.get<number>('DB_PORT'),
+            username: config.get<string>('DB_USER'),
+            password: config.get<string>('DB_PASS'),
+            database: config.get<string>('DB_NAME'),
+            autoLoadEntities: true,
+            synchronize: true,
           }),
+        }),
+        CacheModule.registerAsync({
+          isGlobal: true,
+          inject: [ConfigService],
+          useFactory: (config: ConfigService) => {
+            const url = config.get<string>('REDIS_URL') ?? 'redis://redis:6379';
+            return {
+              stores: [new Keyv({ store: new KeyvRedis(url) })],
+            };
+          },
+        }),
 
-          UsersModule,
-          VehiclesModule,
-        ]),
+
+        UsersModule,
+        VehiclesModule,
+      ]),
   ],
-      controllers: [AppController],
-    providers: [AppService],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule { }
