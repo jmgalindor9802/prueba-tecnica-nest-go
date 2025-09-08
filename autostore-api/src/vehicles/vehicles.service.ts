@@ -15,7 +15,7 @@ import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { Vehicle } from './entities/vehicle.entity';
 
 const VEHICLE_TTL_MS = 10 * 60 * 1000; // 10 minutos para detalles
-const LIST_TTL_MS = 2 * 60 * 1000;   // 2 min para listadosx
+const LIST_TTL_MS = 2 * 60 * 1000;   // 2 min para listados
 const LIST_VER_KEY = 'vehicles:list:ver';
 const cacheKey = (id: number) => `vehicle:${id}`;
 
