@@ -1,23 +1,22 @@
-# Imagen base ligera de Node
-FROM node:20-alpine
+# ---------- Build: compila TS con TODAS las deps (incluye dev) ----------
+FROM node:20-alpine AS builder
+WORKDIR /usr/src/app
 
-# Carpeta de trabajo
-WORKDIR /app
-
-# Copiar package.json y package-lock.json
 COPY package*.json ./
+RUN npm ci
 
-# Instalar dependencias (sin devDependencies en producción)
-RUN npm install
-
-# Copiar el resto del código
 COPY . .
-
-# Compilar
 RUN npm run build
 
-# Exponer puerto
-EXPOSE 3000
+# ---------- Runtime: solo deps de prod y ejecuta dist ----------
+FROM node:20-alpine
+WORKDIR /usr/src/app
 
-# Comando por defecto
-CMD ["npm", "run", "start:prod"]
+ENV NODE_ENV=production
+COPY package*.json ./
+RUN npm ci --omit=dev
+
+COPY --from=builder /usr/src/app/dist ./dist
+
+EXPOSE 3000
+CMD ["node", "dist/main.js"]

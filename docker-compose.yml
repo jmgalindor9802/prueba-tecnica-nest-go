@@ -30,7 +30,7 @@ services:
     environment:
       - PORT=3000
       - NODE_ENV=production
-      - JWT_SECRET=changeme
+      - JWT_SECRET=${JWT_SECRET:-dev-secret-change-me}
       - DB_HOST=db
       - DB_PORT=5432
       - DB_USER=postgres
@@ -41,6 +41,7 @@ services:
       - REDIS_URL=redis://redis:6379
     ports:
       - "3000:3000"
+    command: ["node", "dist/main.js"] 
 
 volumes:
   db_data:

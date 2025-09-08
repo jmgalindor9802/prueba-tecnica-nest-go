@@ -68,6 +68,18 @@ export class UsersService {
     return user;
   }
 
+    async findByEmail(
+    email: string,
+    includePassword = false,
+  ): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { email },
+      select: includePassword
+        ? ['id', 'email', 'password', 'name', 'isActive', 'role']
+        : undefined,
+    });
+  }
+  
   async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findOne(id);
     if (updateUserDto.password) {

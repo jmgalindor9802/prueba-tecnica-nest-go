@@ -8,6 +8,7 @@ import { VehiclesModule } from './vehicles/vehicles.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import Keyv from 'keyv';
 import KeyvRedis from '@keyv/redis';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -44,9 +45,9 @@ import KeyvRedis from '@keyv/redis';
           },
         }),
 
-
         UsersModule,
         VehiclesModule,
+        AuthModule,
       ]),
   ],
   controllers: [AppController],
