@@ -49,7 +49,9 @@ describe('UsersController', () => {
   it('should update a user', async () => {
     (service.update as jest.Mock).mockResolvedValue('updated');
 
-    await expect(controller.update(1, { name: 'Jane' })).resolves.toBe('updated');
+    await expect(controller.update(1, { name: 'Jane' })).resolves.toBe(
+      'updated',
+    );
     expect(service.update).toHaveBeenCalledWith(1, { name: 'Jane' });
   });
 

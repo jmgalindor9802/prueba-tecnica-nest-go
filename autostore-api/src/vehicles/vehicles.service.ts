@@ -15,7 +15,7 @@ import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { Vehicle } from './entities/vehicle.entity';
 
 const VEHICLE_TTL_MS = 10 * 60 * 1000; // 10 minutos para detalles
-const LIST_TTL_MS = 2 * 60 * 1000;   // 2 min para listados
+const LIST_TTL_MS = 2 * 60 * 1000; // 2 min para listados
 const LIST_VER_KEY = 'vehicles:list:ver';
 const cacheKey = (id: number) => `vehicle:${id}`;
 
@@ -60,7 +60,12 @@ export class VehiclesService {
     limit = Math.min(Math.max(1, limit), 50);
 
     const key = await this.listKey(page, limit);
-    const cached = await this.cache.get<{ data: Vehicle[]; total: number; page: number; limit: number }>(key);
+    const cached = await this.cache.get<{
+      data: Vehicle[];
+      total: number;
+      page: number;
+      limit: number;
+    }>(key);
     if (cached) return cached;
 
     const [data, total] = await this.vehicleRepository.findAndCount({

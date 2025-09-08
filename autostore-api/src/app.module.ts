@@ -15,42 +15,43 @@ import { AuthModule } from './auth/auth.module';
     ...(process.env.NODE_ENV === 'test'
       ? []
       : [
-        // Configuración global de variables de entorno
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        ConfigModule.forRoot({ isGlobal: true }),
+          // Configuración global de variables de entorno
 
-        // Configuración de TypeORM con variables de entorno
-        TypeOrmModule.forRootAsync({
-          inject: [ConfigService],
+          ConfigModule.forRoot({ isGlobal: true }),
 
-          useFactory: (config: ConfigService) => ({
-            type: 'postgres',
-            host: config.get<string>('DB_HOST'),
-            port: config.get<number>('DB_PORT'),
-            username: config.get<string>('DB_USER'),
-            password: config.get<string>('DB_PASS'),
-            database: config.get<string>('DB_NAME'),
-            autoLoadEntities: true,
-            synchronize: true,
+          // Configuración de TypeORM con variables de entorno
+          TypeOrmModule.forRootAsync({
+            inject: [ConfigService],
+
+            useFactory: (config: ConfigService) => ({
+              type: 'postgres',
+              host: config.get<string>('DB_HOST'),
+              port: config.get<number>('DB_PORT'),
+              username: config.get<string>('DB_USER'),
+              password: config.get<string>('DB_PASS'),
+              database: config.get<string>('DB_NAME'),
+              autoLoadEntities: true,
+              synchronize: true,
+            }),
           }),
-        }),
-        CacheModule.registerAsync({
-          isGlobal: true,
-          inject: [ConfigService],
-          useFactory: (config: ConfigService) => {
-            const url = config.get<string>('REDIS_URL') ?? 'redis://redis:6379';
-            return {
-              stores: [new Keyv({ store: new KeyvRedis(url) })],
-            };
-          },
-        }),
+          CacheModule.registerAsync({
+            isGlobal: true,
+            inject: [ConfigService],
+            useFactory: (config: ConfigService) => {
+              const url =
+                config.get<string>('REDIS_URL') ?? 'redis://redis:6379';
+              return {
+                stores: [new Keyv({ store: new KeyvRedis(url) })],
+              };
+            },
+          }),
 
-        UsersModule,
-        VehiclesModule,
-        AuthModule,
-      ]),
+          UsersModule,
+          VehiclesModule,
+          AuthModule,
+        ]),
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}

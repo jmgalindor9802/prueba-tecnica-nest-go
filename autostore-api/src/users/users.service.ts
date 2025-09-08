@@ -68,7 +68,7 @@ export class UsersService {
     return user;
   }
 
-    async findByEmail(
+  async findByEmail(
     email: string,
     includePassword = false,
   ): Promise<User | null> {
@@ -79,7 +79,7 @@ export class UsersService {
         : undefined,
     });
   }
-  
+
   async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findOne(id);
     if (updateUserDto.password) {

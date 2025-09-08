@@ -1,5 +1,10 @@
 // src/common/filters/typeorm-exception.filter.ts
-import { Catch, ExceptionFilter, ArgumentsHost, HttpStatus } from '@nestjs/common';
+import {
+  Catch,
+  ExceptionFilter,
+  ArgumentsHost,
+  HttpStatus,
+} from '@nestjs/common';
 import { QueryFailedError } from 'typeorm';
 
 type DriverErr = { code?: string; detail?: string; message?: string };

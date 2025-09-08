@@ -94,7 +94,10 @@
       "^@nestjs/typeorm$": "<rootDir>/test/stubs/nestjs-typeorm.ts",
       "^typeorm$": "<rootDir>/test/stubs/typeorm.ts",
       "^class-transformer$": "<rootDir>/test/stubs/class-transformer.ts",
-      "^class-validator$": "<rootDir>/test/stubs/class-validator.ts"
+      "^class-validator$": "<rootDir>/test/stubs/class-validator.ts",
+      "^@nestjs/passport$": "<rootDir>/test/stubs/nestjs-passport.ts",
+      "^@nestjs/jwt$": "<rootDir>/test/stubs/nestjs-jwt.ts",
+      "^@nestjs/cache-manager$": "<rootDir>/test/stubs/nestjs-cache-manager.ts"
     }
   }
 }

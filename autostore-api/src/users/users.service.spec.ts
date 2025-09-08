@@ -1,15 +1,13 @@
-
-
 import { Repository } from 'typeorm';
- import { UsersService } from './users.service';
+import { UsersService } from './users.service';
 import { User } from './entities/user.entity';
 import { Role } from './entities/role.enum';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
- 
- describe('UsersService', () => {
-   let service: UsersService;
+
+describe('UsersService', () => {
+  let service: UsersService;
   let repository: jest.Mocked<Repository<User>>;
- 
+
   beforeEach(() => {
     repository = {
       create: jest.fn(),
@@ -18,10 +16,10 @@ import { NotFoundException, BadRequestException } from '@nestjs/common';
       findOne: jest.fn(),
       delete: jest.fn(),
     } as unknown as jest.Mocked<Repository<User>>;
- 
+
     service = new UsersService(repository as any);
-   });
- 
+  });
+
   it('should create user with hashed password and default role', async () => {
     const dto = { name: 'John', email: 'john@example.com', password: 'plain' };
 
@@ -83,6 +81,8 @@ import { NotFoundException, BadRequestException } from '@nestjs/common';
     repository.create.mockImplementation((data) => data as any);
     repository.save.mockRejectedValue({ code: '23505' });
 
-    await expect(service.create(dto)).rejects.toBeInstanceOf(BadRequestException);
-   });
- });
+    await expect(service.create(dto)).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+  });
+});

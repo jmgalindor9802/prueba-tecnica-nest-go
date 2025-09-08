@@ -24,13 +24,13 @@ export class CreateVehicleDto {
   model: string;
 
   @ApiProperty({ example: 2024, description: 'Año del vehículo' })
-   @Type(() => Number)
+  @Type(() => Number)
   @IsInt()
   @Min(1886)
   year: number;
 
   @ApiProperty({ example: 150000000.5, description: 'Precio del vehículo' })
-   @Type(() => Number)
+  @Type(() => Number)
   @IsNumber()
   @IsPositive()
   price: number;

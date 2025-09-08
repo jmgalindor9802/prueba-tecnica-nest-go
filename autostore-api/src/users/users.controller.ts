@@ -24,7 +24,7 @@ import {
   ApiConflictResponse,
   ApiNotFoundResponse,
   ApiParam,
-  ApiHeader,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -32,18 +32,15 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Role } from './entities/role.enum';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('users')
-@ApiHeader({
-  name: 'x-role',
-  required: true,
-  description: 'Rol del usuario que hace la solicitud: admin o client',
-})
-@UseGuards(RolesGuard)
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) { }
+  constructor(private readonly usersService: UsersService) {}
 
   @Post()
   @ApiOperation({ summary: 'Crear un nuevo usuario' })
@@ -92,7 +89,7 @@ export class UsersController {
   }
 
   @Delete(':id')
-   @Roles(Role.Admin)
+  @Roles(Role.Admin)
   @ApiOperation({ summary: 'Eliminar un usuario' })
   @ApiParam({ name: 'id', type: Number })
   @ApiOkResponse({ description: 'Usuario eliminado.' })

@@ -50,7 +50,11 @@ describe('VehiclesService', () => {
     expect(created.vin).toBe(dto.vin.toUpperCase());
 
     // Bump de versión de listas
-    expect(cache.set).toHaveBeenCalledWith('vehicles:list:ver', expect.any(Number), 0);
+    expect(cache.set).toHaveBeenCalledWith(
+      'vehicles:list:ver',
+      expect.any(Number),
+      0,
+    );
 
     // Duplicado -> 409
     repository.save.mockRejectedValueOnce({ code: '23505' });
@@ -85,7 +89,12 @@ describe('VehiclesService', () => {
   it('should return cached list when present', async () => {
     // 1ª get -> versión (1)
     // 2ª get -> lista cacheada
-    const payload = { data: [{ id: 2 } as Vehicle], total: 1, page: 2, limit: 5 };
+    const payload = {
+      data: [{ id: 2 } as Vehicle],
+      total: 1,
+      page: 2,
+      limit: 5,
+    };
     cache.get
       .mockResolvedValueOnce(1 as any) // LIST_VER_KEY
       .mockResolvedValueOnce(payload); // lista cacheada
@@ -119,14 +128,20 @@ describe('VehiclesService', () => {
 
     const result = await service.findOne(1);
     expect(result).toBe(vehicle);
-    expect(cache.set).toHaveBeenCalledWith('vehicle:1', vehicle, expect.any(Number));
+    expect(cache.set).toHaveBeenCalledWith(
+      'vehicle:1',
+      vehicle,
+      expect.any(Number),
+    );
   });
 
   it('should update vehicle, refresh detail cache and bump list version', async () => {
     const vehicle = { id: 1, brand: 'Toyota', vin: 'ABC' } as Vehicle;
     jest.spyOn(service, 'findOne').mockResolvedValueOnce(vehicle);
 
-    repository.merge.mockImplementation((v, dto) => ({ ...v, ...dto } as Vehicle));
+    repository.merge.mockImplementation(
+      (v, dto) => ({ ...v, ...dto }) as Vehicle,
+    );
     repository.save.mockImplementation(async (v) => v as Vehicle);
 
     const updated = await service.update(1, { brand: 'Honda' });
@@ -135,9 +150,17 @@ describe('VehiclesService', () => {
     expect(updated.brand).toBe('Honda');
 
     // Refresca caché de detalle
-    expect(cache.set).toHaveBeenCalledWith('vehicle:1', updated, expect.any(Number));
+    expect(cache.set).toHaveBeenCalledWith(
+      'vehicle:1',
+      updated,
+      expect.any(Number),
+    );
     // Bump de versión para listas
-    expect(cache.set).toHaveBeenCalledWith('vehicles:list:ver', expect.any(Number), 0);
+    expect(cache.set).toHaveBeenCalledWith(
+      'vehicles:list:ver',
+      expect.any(Number),
+      0,
+    );
   });
 
   it('should delete vehicle, evict detail cache and bump list version', async () => {
@@ -146,7 +169,11 @@ describe('VehiclesService', () => {
     await expect(service.remove(1)).resolves.toBeUndefined();
 
     expect(cache.del).toHaveBeenCalledWith('vehicle:1'); // borra detalle
-    expect(cache.set).toHaveBeenCalledWith('vehicles:list:ver', expect.any(Number), 0); // bump listas
+    expect(cache.set).toHaveBeenCalledWith(
+      'vehicles:list:ver',
+      expect.any(Number),
+      0,
+    ); // bump listas
   });
 
   it('should throw NotFoundException when delete affects 0 rows', async () => {

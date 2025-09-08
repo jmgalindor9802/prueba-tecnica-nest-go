@@ -17,7 +17,7 @@ async function bootstrap() {
     .setTitle('Autostore API')
     .setDescription('API REST para tienda de autos')
     .setVersion('1.0')
-    .addApiKey({ type: 'apiKey', name: 'x-role', in: 'header' }, 'x-role')
+    .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
