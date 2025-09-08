@@ -23,7 +23,7 @@ export class Vehicle {
   @Column()
   year: number;
 
-  @Column('decimal')
+  @Column('decimal', { transformer: new ColumnNumericTransformer() })
   price: number;
 
   @Column({ unique: true, length: 17 })
