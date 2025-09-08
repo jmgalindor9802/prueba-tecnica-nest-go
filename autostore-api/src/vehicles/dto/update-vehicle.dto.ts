@@ -1,4 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
   IsString,
   IsOptional,
@@ -7,7 +8,7 @@ import {
   IsNumber,
   IsPositive,
   Length,
-   IsBoolean,
+  IsBoolean,
 } from 'class-validator';
 
 export class UpdateVehicleDto {
@@ -26,12 +27,14 @@ export class UpdateVehicleDto {
 
   @ApiPropertyOptional({ example: 2024, description: 'Año del vehículo' })
   @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(1886)
   year?: number;
 
   @ApiPropertyOptional({ example: 15000.5, description: 'Precio del vehículo' })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   @IsPositive()
   price?: number;
@@ -58,6 +61,7 @@ export class UpdateVehicleDto {
     description: 'Disponibilidad del vehículo',
   })
   @IsOptional()
-   @IsBoolean()
+  @Type(() => Boolean)
+  @IsBoolean()
   isAvailable?: boolean;
 }
