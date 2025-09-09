@@ -142,4 +142,32 @@ describe('OrdersService', () => {
             { href: 'http://paypal', rel: 'approve', method: 'GET' },
         ]);
     });
+
+    it('no debería incluir el link de pago en findAll para órdenes no pendientes', async () => {
+        const order = {
+            id: 2,
+            status: OrderStatus.PAID,
+            paymentLink: 'http://paypal',
+            user: { id: 1 },
+            vehicles: [],
+        } as any;
+        orderRepo.find.mockResolvedValue([order]);
+        const result = await service.findAll(1, Role.Admin);
+        expect(result[0].links).toBeUndefined();
+        expect(result[0].paymentLink).toBeUndefined();
+    });
+
+    it('no debería incluir el link de pago en findOne para orden no pendiente', async () => {
+        const order = {
+            id: 3,
+            status: OrderStatus.PAID,
+            paymentLink: 'http://paypal',
+            user: { id: 1 },
+            vehicles: [],
+        } as any;
+        orderRepo.findOne.mockResolvedValue(order);
+        const result = await service.findOne(3, 1, Role.Admin);
+        expect(result.links).toBeUndefined();
+        expect(result.paymentLink).toBeUndefined();
+    });
 });

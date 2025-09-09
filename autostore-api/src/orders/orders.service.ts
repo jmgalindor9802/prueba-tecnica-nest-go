@@ -122,7 +122,9 @@ export class OrdersService {
                 ],
             };
         }
-        return order;
+        const cleaned = { ...order } as any;
+        delete cleaned.paymentLink;
+        return cleaned;
     }
 
     async cancel(
