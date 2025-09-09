@@ -20,7 +20,6 @@ import {
   ApiOkResponse,
   ApiBadRequestResponse,
   ApiNotFoundResponse,
-  ApiHeader,
   ApiParam,
   ApiQuery,
   ApiBearerAuth,
@@ -34,13 +33,13 @@ import { Role } from '../users/entities/role.enum';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('vehicles')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('vehicles')
 export class VehiclesController {
-  constructor(private readonly vehiclesService: VehiclesService) {}
+  constructor(private readonly vehiclesService: VehiclesService) { }
 
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
   @Roles(Role.Admin)
   @ApiOperation({ summary: 'Crear un nuevo vehículo' })
   @ApiBody({ type: CreateVehicleDto })
@@ -84,6 +83,8 @@ export class VehiclesController {
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
   @Roles(Role.Admin)
   @ApiOperation({ summary: 'Actualizar un vehículo' })
   @ApiParam({ name: 'id', type: Number })
@@ -98,6 +99,8 @@ export class VehiclesController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
   @Roles(Role.Admin)
   @ApiOperation({ summary: 'Eliminar un vehículo' })
   @ApiParam({ name: 'id', type: Number })

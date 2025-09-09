@@ -20,8 +20,14 @@ async function bootstrap() {
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
-
+  SwaggerModule.setup('api', app, document, {
+  swaggerOptions: {
+    tagsSorter: (a, b) => {
+      const order = ['auth', 'users', 'vehicles']; // orden deseado
+      return order.indexOf(a) - order.indexOf(b);
+    },
+  },
+});
   // registra primero el filtro específico y luego el genérico
   app.useGlobalFilters(new TypeOrmExceptionFilter(), new AllExceptionsFilter());
 

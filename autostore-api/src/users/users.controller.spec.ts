@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
+import { CreateUserDto } from './dto/create-user.dto';
+import { Role } from './entities/role.enum';
 
 describe('UsersController', () => {
   let controller: UsersController;
@@ -25,10 +27,15 @@ describe('UsersController', () => {
   });
 
   it('should delegate creation to service', async () => {
-    const dto = { name: 'John', email: 'john@example.com', password: 'pass' };
+    const dto: CreateUserDto = {
+      name: 'John',
+      email: 'john@example.com',
+      password: 'pass',
+      role: Role.Client,
+    };
     (service.create as jest.Mock).mockResolvedValue('created');
 
-    await expect(controller.create(dto)).resolves.toBe('created');
+    await expect(controller.create(dto, {} as any)).resolves.toBe('created');
     expect(service.create).toHaveBeenCalledWith(dto);
   });
 

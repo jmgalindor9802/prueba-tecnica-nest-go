@@ -13,6 +13,8 @@ import {
   UseInterceptors,
   DefaultValuePipe,
   UseGuards,
+  Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -33,16 +35,17 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Role } from './entities/role.enum';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { OptionalClientJwtAuthGuard } from '../common/guards/optional-client-jwt-auth.guard';
 
 @ApiTags('users')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
   @Post()
+  @UseGuards(OptionalClientJwtAuthGuard, RolesGuard)
   @ApiOperation({ summary: 'Crear un nuevo usuario' })
   @ApiBody({ type: CreateUserDto })
   @ApiCreatedResponse({
@@ -50,12 +53,16 @@ export class UsersController {
   })
   @ApiBadRequestResponse({ description: 'Datos inválidos.' })
   @ApiConflictResponse({ description: 'Correo ya está en uso.' })
-  async create(@Body() createUserDto: CreateUserDto) {
+   async create(@Body() createUserDto: CreateUserDto, @Req() req: any) {
+    if (createUserDto.role !== Role.Client && !req.user) {
+      throw new UnauthorizedException();
+    }
     return this.usersService.create(createUserDto);
   }
 
   @Get()
   @Roles(Role.Admin)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiOperation({ summary: 'Listar todos los usuarios' })
   @ApiOkResponse({ description: 'Lista de usuarios retornada.' })
   async findAll(
@@ -66,6 +73,7 @@ export class UsersController {
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.Admin, Role.Client)
   @ApiOperation({ summary: 'Obtener un usuario por ID' })
   @ApiParam({ name: 'id', type: Number })
@@ -76,6 +84,7 @@ export class UsersController {
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.Admin, Role.Client)
   @ApiOperation({ summary: 'Actualizar un usuario' })
   @ApiParam({ name: 'id', type: Number })
@@ -89,6 +98,7 @@ export class UsersController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.Admin)
   @ApiOperation({ summary: 'Eliminar un usuario' })
   @ApiParam({ name: 'id', type: Number })
