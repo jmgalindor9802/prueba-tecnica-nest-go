@@ -22,6 +22,8 @@ services:
 
   autostore_api:
     build: ./autostore-api
+    env_file:
+      - .env
     container_name: autostore_api
     restart: always
     depends_on:
