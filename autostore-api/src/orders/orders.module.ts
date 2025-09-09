@@ -10,5 +10,6 @@ import { PaymentsModule } from '../payments/payments.module';
   imports: [TypeOrmModule.forFeature([Order]), VehiclesModule, PaymentsModule],
   controllers: [OrdersController],
   providers: [OrdersService],
+  exports: [OrdersService],
 })
 export class OrdersModule {}
