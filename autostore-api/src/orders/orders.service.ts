@@ -79,17 +79,27 @@ export class OrdersService {
         });
     }
 
-    async findAll(userId: number, role: Role): Promise<Order[]> {
-        if (role === Role.Admin) {
-            return this.orderRepository.find({ relations: ['vehicles', 'user'] });
-        }
-        return this.orderRepository.find({
-            where: { user: { id: userId } },
-            relations: ['vehicles', 'user'],
-        });
+     async findAll(
+        userId: number,
+        role: Role,
+    ): Promise<(Order & { links?: any[] })[]> {
+        const orders =
+            role === Role.Admin
+                ? await this.orderRepository.find({
+                      relations: ['vehicles', 'user'],
+                  })
+                : await this.orderRepository.find({
+                      where: { user: { id: userId } },
+                      relations: ['vehicles', 'user'],
+                  });
+        return orders.map((o) => this.appendLinks(o));
     }
 
-    async findOne(id: number, userId: number, role: Role): Promise<Order> {
+    async findOne(
+        id: number,
+        userId: number,
+        role: Role,
+    ): Promise<Order & { links?: any[] }> {
         const order = await this.orderRepository.findOne({
             where: { id },
             relations: ['vehicles', 'user'],
@@ -99,6 +109,18 @@ export class OrdersService {
         }
         if (role !== Role.Admin && order.user.id !== userId) {
             throw new ForbiddenException('Acceso denegado');
+        }
+          return this.appendLinks(order);
+    }
+
+    private appendLinks(order: Order): Order & { links?: any[] } {
+        if (order.status === OrderStatus.PENDING && order.paymentLink) {
+            return {
+                ...order,
+                links: [
+                    { href: order.paymentLink, rel: 'approve', method: 'GET' },
+                ],
+            };
         }
         return order;
     }

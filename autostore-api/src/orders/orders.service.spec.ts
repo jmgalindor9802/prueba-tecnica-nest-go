@@ -112,4 +112,34 @@ describe('OrdersService', () => {
         expect(result.status).toBe(OrderStatus.PAID);
         expect(paymentsService.captureOrder).toHaveBeenCalledWith('paypal123');
     });
+
+      it('debería incluir el link de pago en findAll para órdenes pendientes', async () => {
+        const order = {
+            id: 1,
+            status: OrderStatus.PENDING,
+            paymentLink: 'http://paypal',
+            user: { id: 1 },
+            vehicles: [],
+        } as any;
+        orderRepo.find.mockResolvedValue([order]);
+        const result = await service.findAll(1, Role.Admin);
+        expect(result[0].links).toEqual([
+            { href: 'http://paypal', rel: 'approve', method: 'GET' },
+        ]);
+    });
+
+    it('debería incluir el link de pago en findOne para orden pendiente', async () => {
+        const order = {
+            id: 1,
+            status: OrderStatus.PENDING,
+            paymentLink: 'http://paypal',
+            user: { id: 1 },
+            vehicles: [],
+        } as any;
+        orderRepo.findOne.mockResolvedValue(order);
+        const result = await service.findOne(1, 1, Role.Client);
+        expect(result.links).toEqual([
+            { href: 'http://paypal', rel: 'approve', method: 'GET' },
+        ]);
+    });
 });
