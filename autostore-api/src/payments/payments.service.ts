@@ -40,11 +40,16 @@ export class PaymentsService {
   }
   private async getCopToUsdRate(): Promise<number> {
     try {
-      const res = await fetch(
-        'https://api.exchangerate.host/latest?base=COP&symbols=USD',
+         const params = new URLSearchParams({
+        access_key: process.env.EXCHANGE_RATE_API_KEY ?? '',
+        source: 'COP',
+        currencies: 'USD',
+      });
+      const res = await fetch(        
+        `https://api.exchangerate.host/live?${params.toString()}`,
       );
       const data = await res.json();
-      return data?.rates?.USD ?? 1;
+      return data?.quotes?.COPUSD ?? 1;
     } catch {
       return 1;
     }

@@ -41,6 +41,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_URL=redis://redis:6379
+      - EXCHANGE_RATE_API_KEY=74750f7ecce959162d511e722a901a64
     ports:
       - "3000:3000"
     command: ["node", "dist/main.js"] 
