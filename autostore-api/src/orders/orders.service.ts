@@ -1,64 +1,135 @@
 import {
-  Injectable,
-  BadRequestException,
-  NotFoundException,
+    Injectable,
+    BadRequestException,
+    NotFoundException,
+    ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { Order, OrderStatus } from './entities/order.entity';
 import { VehiclesService } from '../vehicles/vehicles.service';
+import { Role } from '../users/entities/role.enum';
 
 @Injectable()
 export class OrdersService {
-  constructor(
-    @InjectRepository(Order)
-    private readonly orderRepository: Repository<Order>,
-    private readonly vehiclesService: VehiclesService,
-  ) {}
+    constructor(
+        @InjectRepository(Order)
+        private readonly orderRepository: Repository<Order>,
+        private readonly vehiclesService: VehiclesService,
+        private readonly dataSource: DataSource,
+    ) { }
 
-  async create(userId: number, vehicleIds: number[]): Promise<Order> {
-    const vehicles = await Promise.all(
-      vehicleIds.map((id) => this.vehiclesService.findOne(id)),
-    );
+    async create(
+        userId: number,
+        vehicleIds: number[],
+        shippingAddress: string,
+        paymentMethod: string,
+        notes?: string,
+    ): Promise<Order> {
+        if (new Set(vehicleIds).size !== vehicleIds.length) {
+            throw new BadRequestException('IDs de vehículos duplicados');
+        }
 
-    const unavailable = vehicles.find((v) => !v.isAvailable);
-    if (unavailable) {
-      throw new BadRequestException(
-        `Vehículo con id ${unavailable.id} no disponible`,
-      );
+        const vehicles = await Promise.all(
+            vehicleIds.map((id) => this.vehiclesService.findOne(id)),
+        );
+
+        const unavailable = vehicles.find((v) => !v.isAvailable);
+        if (unavailable) {
+            throw new BadRequestException(
+                `Vehículo con id ${unavailable.id} no disponible`,
+            );
+        }
+
+        const total = vehicles.reduce((sum, v) => sum + v.price, 0);
+
+        return this.dataSource.transaction(async (manager) => {
+            const order = manager.create(Order, {
+                user: { id: userId } as any,
+                vehicles,
+                total,
+                shippingAddress,
+                paymentMethod,
+                notes,
+                status: OrderStatus.PENDING,
+            });
+            const saved = await manager.save(order);
+
+            await Promise.all(
+                vehicles.map((v) =>
+                    this.vehiclesService.markAsUnavailable(v.id, manager),
+                ),
+            );
+
+            return saved;
+        });
     }
 
-    const total = vehicles.reduce((sum, v) => sum + v.price, 0);
-
-    const order = this.orderRepository.create({
-      user: { id: userId } as any,
-      vehicles,
-      total,
-      status: OrderStatus.PENDING,
-    });
-    const saved = await this.orderRepository.save(order);
-
-    await Promise.all(
-      vehicles.map((v) => this.vehiclesService.markAsUnavailable(v.id)),
-    );
-
-    return saved;
-  }
-
-  async updateStatus(id: number, status: OrderStatus): Promise<Order> {
-    const order = await this.orderRepository.findOne({ where: { id } });
-    if (!order) {
-      throw new NotFoundException(`Orden con id ${id} no encontrada`);
+    async findAll(userId: number, role: Role): Promise<Order[]> {
+        if (role === Role.Admin) {
+            return this.orderRepository.find({ relations: ['vehicles', 'user'] });
+        }
+        return this.orderRepository.find({
+            where: { user: { id: userId } },
+            relations: ['vehicles', 'user'],
+        });
     }
-    order.status = status;
-    return this.orderRepository.save(order);
-  }
 
-  markAsPaid(id: number): Promise<Order> {
-    return this.updateStatus(id, OrderStatus.PAID);
-  }
+    async findOne(id: number, userId: number, role: Role): Promise<Order> {
+        const order = await this.orderRepository.findOne({
+            where: { id },
+            relations: ['vehicles', 'user'],
+        });
+        if (!order) {
+            throw new NotFoundException(`Orden con id ${id} no encontrada`);
+        }
+        if (role !== Role.Admin && order.user.id !== userId) {
+            throw new ForbiddenException('Acceso denegado');
+        }
+        return order;
+    }
 
-  markAsShipped(id: number): Promise<Order> {
-    return this.updateStatus(id, OrderStatus.SHIPPED);
-  }
+    async cancel(
+        id: number,
+        userId: number,
+        role: Role,
+        reason?: string,
+    ): Promise<Order> {
+        const order = await this.findOne(id, userId, role);
+        if (order.status === OrderStatus.CANCELLED) {
+            throw new BadRequestException('La orden ya está cancelada');
+        }
+
+        return this.dataSource.transaction(async (manager) => {
+            order.status = OrderStatus.CANCELLED;
+            order.cancellationReason = reason;
+            const saved = await manager.save(order);
+            await Promise.all(
+                order.vehicles.map((v) =>
+                    this.vehiclesService.markAsAvailable(v.id, manager),
+                ),
+            );
+            return saved;
+        });
+    }
+
+    private async updateStatus(
+        id: number,
+        status: OrderStatus,
+    ): Promise<Order> {
+        const order = await this.orderRepository.findOne({ where: { id } });
+        if (!order) {
+            throw new NotFoundException(`Orden con id ${id} no encontrada`);
+        }
+        order.status = status;
+        return this.orderRepository.save(order);
+    }
+
+    markAsPaid(id: number): Promise<Order> {
+        return this.updateStatus(id, OrderStatus.PAID);
+    }
+
+    markAsShipped(id: number): Promise<Order> {
+        return this.updateStatus(id, OrderStatus.SHIPPED);
+    }
 }

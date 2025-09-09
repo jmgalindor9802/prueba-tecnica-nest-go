@@ -12,4 +12,19 @@ export class Repository<T> {
   findAndCount = jest.fn();
   findOne = jest.fn();
   delete = jest.fn();
+   update = jest.fn();
+  merge = jest.fn();
+}
+
+export class EntityManager {
+  save = jest.fn();
+  create = jest.fn();
+  update = jest.fn();
+  getRepository = jest.fn(() => new Repository());
+}
+
+export class DataSource {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  transaction = async (cb: (manager: EntityManager) => Promise<any>) =>
+    cb(new EntityManager());
 }

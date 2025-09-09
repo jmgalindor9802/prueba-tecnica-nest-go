@@ -6,7 +6,7 @@ import {
   Inject,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, EntityManager } from 'typeorm';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 
@@ -25,7 +25,7 @@ export class VehiclesService {
     @InjectRepository(Vehicle)
     private readonly vehicleRepository: Repository<Vehicle>,
     @Inject(CACHE_MANAGER) private readonly cache: Cache,
-  ) {}
+  ) { }
 
   private async listKey(page: number, limit: number): Promise<string> {
     const ver = (await this.cache.get<number>(LIST_VER_KEY)) ?? 1;
@@ -115,8 +115,14 @@ export class VehiclesService {
       throw error;
     }
   }
-    async markAsUnavailable(id: number): Promise<void> {
-    const result = await this.vehicleRepository.update(id, {
+  async markAsUnavailable(
+    id: number,
+    manager?: EntityManager,
+  ): Promise<void> {
+    const repo = manager
+      ? manager.getRepository(Vehicle)
+      : this.vehicleRepository;
+    const result = await repo.update(id, {
       isAvailable: false,
     });
     if (result.affected === 0) {
@@ -125,7 +131,22 @@ export class VehiclesService {
     await this.cache.del(cacheKey(id));
     await this.bumpListVersion();
   }
-
+  async markAsAvailable(
+    id: number,
+    manager?: EntityManager,
+  ): Promise<void> {
+    const repo = manager
+      ? manager.getRepository(Vehicle)
+      : this.vehicleRepository;
+    const result = await repo.update(id, {
+      isAvailable: true,
+    });
+    if (result.affected === 0) {
+      throw new NotFoundException(`Vehículo con id ${id} no encontrado`);
+    }
+    await this.cache.del(cacheKey(id));
+    await this.bumpListVersion();
+  }
   async remove(id: number): Promise<void> {
     const result = await this.vehicleRepository.delete(id);
     if (result.affected === 0) {

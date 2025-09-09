@@ -15,6 +15,7 @@ export enum OrderStatus {
   PENDING = 'PENDING',
   PAID = 'PAID',
   SHIPPED = 'SHIPPED',
+  CANCELLED = 'CANCELLED',
 }
 
 @Entity('orders')
@@ -32,6 +33,18 @@ export class Order {
   @Column('decimal', { default: 0 })
   total: number;
 
+  @Column({ length: 255 })
+  shippingAddress: string;
+
+  @Column({ length: 100 })
+  paymentMethod: string;
+
+  @Column({ type: 'text', nullable: true })
+  notes?: string;
+
+  @Column({ type: 'text', nullable: true })
+  cancellationReason?: string;
+  
   @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.PENDING })
   status: OrderStatus;
 
