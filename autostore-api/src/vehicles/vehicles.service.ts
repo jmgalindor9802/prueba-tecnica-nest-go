@@ -115,6 +115,16 @@ export class VehiclesService {
       throw error;
     }
   }
+    async markAsUnavailable(id: number): Promise<void> {
+    const result = await this.vehicleRepository.update(id, {
+      isAvailable: false,
+    });
+    if (result.affected === 0) {
+      throw new NotFoundException(`Vehículo con id ${id} no encontrado`);
+    }
+    await this.cache.del(cacheKey(id));
+    await this.bumpListVersion();
+  }
 
   async remove(id: number): Promise<void> {
     const result = await this.vehicleRepository.delete(id);

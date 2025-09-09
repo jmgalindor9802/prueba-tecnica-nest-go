@@ -10,3 +10,5 @@ export const IsNumber = () => () => {};
 export const IsPositive = () => () => {};
 export const Length = () => () => {};
 export const IsBoolean = () => () => {};
+export const IsArray = () => () => {};
+export const ArrayNotEmpty = () => () => {};
