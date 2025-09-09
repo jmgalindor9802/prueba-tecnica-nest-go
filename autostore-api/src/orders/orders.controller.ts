@@ -74,7 +74,12 @@ export class OrdersController {
         @Param('id', ParseIntPipe) id: number,
         @Body() dto: CancelOrderDto,
     ) {
-        return this.ordersService.cancel(id, req.user.id, req.user.role, dto.reason);
+        return this.ordersService.cancel(
+            id,
+            req.user.id,
+            req.user.role,
+            dto.reason,
+        );
     }
 
     @Patch(':id/pay')
@@ -87,11 +92,20 @@ export class OrdersController {
     }
 
     @Patch(':id/ship')
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(Role.Admin)
-    @ApiBearerAuth()
-    @ApiOperation({ summary: 'Marcar orden como enviada' })
-    async markAsShipped(@Param('id', ParseIntPipe) id: number) {
-        return this.ordersService.markAsShipped(id);
-    }
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Marcar orden como enviada' })
+  async markAsShipped(@Param('id', ParseIntPipe) id: number) {
+    return this.ordersService.markAsShipped(id);
+  }
+
+  @Post(':id/paypal/capture')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin, Role.Client)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Capturar pago de PayPal' })
+  async capturePayPal(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
+    return this.ordersService.capturePayment(id, req.user.id, req.user.role);
+  }
 }

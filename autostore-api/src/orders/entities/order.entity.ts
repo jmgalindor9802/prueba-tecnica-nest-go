@@ -39,6 +39,9 @@ export class Order {
   @Column({ length: 100 })
   paymentMethod: string;
 
+   @Column({ length: 100, nullable: true })
+  paymentTransactionId?: string;
+  
   @Column({ type: 'text', nullable: true })
   notes?: string;
 

@@ -10,6 +10,7 @@ import Keyv from 'keyv';
 import KeyvRedis from '@keyv/redis';
 import { AuthModule } from './auth/auth.module';
 import { OrdersModule } from './orders/orders.module';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
@@ -17,13 +18,11 @@ import { OrdersModule } from './orders/orders.module';
       ? []
       : [
         // Configuración global de variables de entorno
-
         ConfigModule.forRoot({ isGlobal: true }),
-
         // Configuración de TypeORM con variables de entorno
         TypeOrmModule.forRootAsync({
-          inject: [ConfigService],
 
+          inject: [ConfigService],
           useFactory: (config: ConfigService) => ({
             type: 'postgres',
             host: config.get<string>('DB_HOST'),
@@ -51,6 +50,7 @@ import { OrdersModule } from './orders/orders.module';
         VehiclesModule,
         AuthModule,
         OrdersModule,
+        PaymentsModule,
       ]),
   ],
   controllers: [AppController],

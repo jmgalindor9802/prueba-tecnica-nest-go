@@ -22,6 +22,7 @@ describe('OrdersController', () => {
                         cancel: jest.fn(),
                         markAsPaid: jest.fn(),
                         markAsShipped: jest.fn(),
+                        capturePayment: jest.fn(),
                     },
                 },
             ],
@@ -83,8 +84,16 @@ describe('OrdersController', () => {
     });
 
     it('should delegate mark as shipped', async () => {
-        (service.markAsShipped as jest.Mock).mockResolvedValue('shipped');
-        await expect(controller.markAsShipped(5)).resolves.toBe('shipped');
-        expect(service.markAsShipped).toHaveBeenCalledWith(5);
-    });
+    (service.markAsShipped as jest.Mock).mockResolvedValue('shipped');
+    await expect(controller.markAsShipped(5)).resolves.toBe('shipped');
+    expect(service.markAsShipped).toHaveBeenCalledWith(5);
+  });
+
+  it('should delegate PayPal capture', async () => {
+    (service.capturePayment as jest.Mock).mockResolvedValue('captured');
+    await expect(
+      controller.capturePayPal({ user: { id: 1, role: Role.Client } }, 6),
+    ).resolves.toBe('captured');
+    expect(service.capturePayment).toHaveBeenCalledWith(6, 1, Role.Client);
+  });
 });
