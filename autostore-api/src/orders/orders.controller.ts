@@ -18,6 +18,7 @@ import {
 } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { OrderResponseDto } from './dto/order-response.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -34,7 +35,7 @@ export class OrdersController {
     @Roles(Role.Admin, Role.Client)
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Crear una orden' })
-    @ApiCreatedResponse({ description: 'Orden creada' })
+    @ApiCreatedResponse({ description: 'Orden creada', type: OrderResponseDto })
     @ApiBody({ type: CreateOrderDto })
     async create(@Req() req: any, @Body() dto: CreateOrderDto) {
         return this.ordersService.create(

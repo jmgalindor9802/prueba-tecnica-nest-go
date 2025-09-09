@@ -27,7 +27,7 @@ export class OrdersService {
         shippingAddress: string,
         paymentMethod: string,
         notes?: string,
-    ): Promise<Order> {
+     ): Promise<Order & { links?: any[] }> {
         if (new Set(vehicleIds).size !== vehicleIds.length) {
             throw new BadRequestException('IDs de vehículos duplicados');
         }
@@ -46,8 +46,11 @@ export class OrdersService {
         const total = vehicles.reduce((sum, v) => sum + v.price, 0);
 
         let paymentTransactionId: string | undefined;
+        let links: any[] | undefined;
         if (paymentMethod.toLowerCase() === 'paypal') {
-            paymentTransactionId = await this.paymentsService.createOrder(total);
+            const result = await this.paymentsService.createOrder(total);
+            paymentTransactionId = result.id;
+            links = result.links;
         }
 
             return this.dataSource.transaction(async (manager) => {
@@ -69,7 +72,7 @@ export class OrdersService {
                     ),
                 );
 
-                return saved;
+                return { ...saved, links };
             });
         }
 

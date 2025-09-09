@@ -34,7 +34,9 @@ describe('OrdersService', () => {
       transaction: jest.fn(async (cb) => cb(manager)),
     };
     paymentsService = {
-      createOrder: jest.fn().mockResolvedValue('paypal123'),
+      createOrder: jest
+        .fn()
+        .mockResolvedValue({ id: 'paypal123', links: [] }),
       captureOrder: jest.fn().mockResolvedValue(true),
     };
 
@@ -55,6 +57,7 @@ describe('OrdersService', () => {
     const order = await service.create(1, [1], 'dir', 'paypal');
 
     expect(order.total).toBe(100);
+    expect(order.links).toEqual([]);
     expect(vehiclesService.markAsUnavailable).toHaveBeenCalledWith(1, manager);
     expect(paymentsService.createOrder).toHaveBeenCalledWith(100);
   });

@@ -15,7 +15,7 @@ export class PaymentsService {
     this.client = new paypal.core.PayPalHttpClient(environment);
   }
 
-  async createOrder(total: number): Promise<string> {
+  async createOrder(total: number): Promise<{ id: string; links: any[] }> {
     const request = new paypal.orders.OrdersCreateRequest();
     request.prefer('return=representation');
     request.requestBody({
@@ -27,7 +27,7 @@ export class PaymentsService {
       ],
     });
     const response = await this.client.execute(request);
-    return response.result.id;
+    return { id: response.result.id, links: response.result.links };
   }
 
   async captureOrder(orderId: string): Promise<boolean> {
