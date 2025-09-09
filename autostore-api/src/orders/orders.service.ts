@@ -180,4 +180,20 @@ export class OrdersService {
         order.status = OrderStatus.PAID;
         return this.orderRepository.save(order);
     }
+    async capturePaymentByTransactionId(token: string): Promise<Order> {
+        const order = await this.orderRepository.findOne({
+            where: { paymentTransactionId: token },
+        });
+        if (!order) {
+            throw new NotFoundException(
+                `Orden con transacción ${token} no encontrada`,
+            );
+        }
+        const completed = await this.paymentsService.captureOrder(token);
+        if (!completed) {
+            throw new BadRequestException('Pago no completado');
+        }
+        order.status = OrderStatus.PAID;
+        return this.orderRepository.save(order);
+    }
 }

@@ -1,42 +1,55 @@
 import { Injectable } from '@nestjs/common';
-import * as paypal from '@paypal/checkout-server-sdk';
+import {
+  Client,
+  Environment,
+  CheckoutPaymentIntent,
+} from '@paypal/paypal-server-sdk';
 
 @Injectable()
 export class PaymentsService {
-  private client: paypal.core.PayPalHttpClient;
+    private client: Client;
 
   constructor() {
     const clientId = process.env.PAYPAL_CLIENT_ID ?? '';
     const clientSecret = process.env.PAYPAL_CLIENT_SECRET ?? '';
     const environment =
       process.env.PAYPAL_MODE === 'live'
-        ? new paypal.core.LiveEnvironment(clientId, clientSecret)
-        : new paypal.core.SandboxEnvironment(clientId, clientSecret);
-    this.client = new paypal.core.PayPalHttpClient(environment);
+         ? Environment.Production
+        : Environment.Sandbox;
+
+    this.client = new Client({
+      environment,
+      clientCredentialsAuthCredentials: {
+        oAuthClientId: clientId,
+        oAuthClientSecret: clientSecret,
+      },
+    });
   }
 
   async createOrder(total: number): Promise<{ id: string; links: any[] }> {
     const rate = await this.getCopToUsdRate();
     const usdTotal = (total * rate).toFixed(2);
-    const request = new paypal.orders.OrdersCreateRequest();
-    request.prefer('return=representation');
-    request.requestBody({
-      intent: 'CAPTURE',
-      purchase_units: [
-        {
-          amount: { currency_code: 'USD', value: usdTotal },
+      const { result } = await this.client.orders.createOrder({
+      body: {
+        intent: CheckoutPaymentIntent.Capture,
+        applicationContext: {
+          returnUrl: process.env.PAYPAL_RETURN_URL ?? '',
+          cancelUrl: process.env.PAYPAL_CANCEL_URL ?? '',
         },
-      ],
+       purchaseUnits: [
+          {
+            amount: { currencyCode: 'USD', value: usdTotal },
+          },
+        ],
+      },
+      prefer: 'return=representation',
     });
-    const response = await this.client.execute(request);
-    return { id: response.result.id, links: response.result.links };
+    return { id: result.id ?? '', links: result.links ?? [] };
   }
 
   async captureOrder(orderId: string): Promise<boolean> {
-    const request = new paypal.orders.OrdersCaptureRequest(orderId);
-    request.requestBody({});
-    const response = await this.client.execute(request);
-    return response.result.status === 'COMPLETED';
+    const { result } = await this.client.orders.captureOrder({ id: orderId });
+    return result.status === 'COMPLETED';
   }
   private async getCopToUsdRate(): Promise<number> {
     try {
