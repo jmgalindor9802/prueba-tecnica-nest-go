@@ -98,7 +98,8 @@
       "^class-validator$": "<rootDir>/test/stubs/class-validator.ts",
       "^@nestjs/passport$": "<rootDir>/test/stubs/nestjs-passport.ts",
       "^@nestjs/jwt$": "<rootDir>/test/stubs/nestjs-jwt.ts",
-      "^@nestjs/cache-manager$": "<rootDir>/test/stubs/nestjs-cache-manager.ts"
+      "^@nestjs/cache-manager$": "<rootDir>/test/stubs/nestjs-cache-manager.ts",
+      "^@paypal/checkout-server-sdk$": "<rootDir>/test/stubs/paypal-sdk.ts"
     }
   }
 }

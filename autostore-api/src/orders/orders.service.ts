@@ -27,7 +27,7 @@ export class OrdersService {
         shippingAddress: string,
         paymentMethod: string,
         notes?: string,
-     ): Promise<Order & { links?: any[] }> {
+    ): Promise<Order & { links?: any[] }> {
         if (new Set(vehicleIds).size !== vehicleIds.length) {
             throw new BadRequestException('IDs de vehículos duplicados');
         }
@@ -47,37 +47,40 @@ export class OrdersService {
 
         let paymentTransactionId: string | undefined;
         let links: any[] | undefined;
+        let paymentLink: string | undefined;
         if (paymentMethod.toLowerCase() === 'paypal') {
             const result = await this.paymentsService.createOrder(total);
             paymentTransactionId = result.id;
             links = result.links;
+            paymentLink = result.links?.find((l: any) => l.rel === 'approve')?.href;
         }
 
-            return this.dataSource.transaction(async (manager) => {
-                const order = manager.create(Order, {
-                    user: { id: userId } as any,
-                    vehicles,
-                    total,
-                    shippingAddress,
-                    paymentMethod,
-                    paymentTransactionId,
-                    notes,
-                    status: OrderStatus.PENDING,
-                });
-                const saved = await manager.save(order);
-
-                await Promise.all(
-                    vehicles.map((v) =>
-                        this.vehiclesService.markAsUnavailable(v.id, manager),
-                    ),
-                );
-
-                return { ...saved, links };
+        return this.dataSource.transaction(async (manager) => {
+            const order = manager.create(Order, {
+                user: { id: userId } as any,
+                vehicles,
+                total,
+                shippingAddress,
+                paymentMethod,
+                paymentTransactionId,
+                paymentLink,
+                notes,
+                status: OrderStatus.PENDING,
             });
-        }
+            const saved = await manager.save(order);
 
-    async findAll(userId: number, role: Role): Promise < Order[] > {
-            if(role === Role.Admin) {
+            await Promise.all(
+                vehicles.map((v) =>
+                    this.vehiclesService.markAsUnavailable(v.id, manager),
+                ),
+            );
+
+            return { ...saved, links };
+        });
+    }
+
+    async findAll(userId: number, role: Role): Promise<Order[]> {
+        if (role === Role.Admin) {
             return this.orderRepository.find({ relations: ['vehicles', 'user'] });
         }
         return this.orderRepository.find({
@@ -112,47 +115,47 @@ export class OrdersService {
         }
 
         return this.dataSource.transaction(async (manager) => {
-      order.status = OrderStatus.CANCELLED;
-      order.cancellationReason = reason;
-      const saved = await manager.save(order);
-      await Promise.all(
-        order.vehicles.map((v) =>
-          this.vehiclesService.markAsAvailable(v.id, manager),
-        ),
-      );
-      return saved;
-    });
-  }
-
-  private async updateStatus(id: number, status: OrderStatus): Promise<Order> {
-    const order = await this.orderRepository.findOne({ where: { id } });
-    if (!order) {
-      throw new NotFoundException(`Orden con id ${id} no encontrada`);
+            order.status = OrderStatus.CANCELLED;
+            order.cancellationReason = reason;
+            const saved = await manager.save(order);
+            await Promise.all(
+                order.vehicles.map((v) =>
+                    this.vehiclesService.markAsAvailable(v.id, manager),
+                ),
+            );
+            return saved;
+        });
     }
-    order.status = status;
-    return this.orderRepository.save(order);
-  }
 
-  markAsPaid(id: number): Promise<Order> {
-    return this.updateStatus(id, OrderStatus.PAID);
-  }
-
-  markAsShipped(id: number): Promise<Order> {
-    return this.updateStatus(id, OrderStatus.SHIPPED);
-  }
-
-  async capturePayment(id: number, userId: number, role: Role): Promise<Order> {
-    const order = await this.findOne(id, userId, role);
-    if (!order.paymentTransactionId) {
-      throw new BadRequestException('Orden sin transacción de pago');
+    private async updateStatus(id: number, status: OrderStatus): Promise<Order> {
+        const order = await this.orderRepository.findOne({ where: { id } });
+        if (!order) {
+            throw new NotFoundException(`Orden con id ${id} no encontrada`);
+        }
+        order.status = status;
+        return this.orderRepository.save(order);
     }
-    const completed = await this.paymentsService.captureOrder(
-      order.paymentTransactionId,
-    );
-    if (!completed) {
-      throw new BadRequestException('Pago no completado');
+
+    markAsPaid(id: number): Promise<Order> {
+        return this.updateStatus(id, OrderStatus.PAID);
     }
-      order.status = OrderStatus.PAID;
-    return this.orderRepository.save(order);
-  }
+
+    markAsShipped(id: number): Promise<Order> {
+        return this.updateStatus(id, OrderStatus.SHIPPED);
+    }
+
+    async capturePayment(id: number, userId: number, role: Role): Promise<Order> {
+        const order = await this.findOne(id, userId, role);
+        if (!order.paymentTransactionId) {
+            throw new BadRequestException('Orden sin transacción de pago');
+        }
+        const completed = await this.paymentsService.captureOrder(
+            order.paymentTransactionId,
+        );
+        if (!completed) {
+            throw new BadRequestException('Pago no completado');
+        }
+        order.status = OrderStatus.PAID;
+        return this.orderRepository.save(order);
+    }
 }

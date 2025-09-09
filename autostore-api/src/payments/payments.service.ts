@@ -16,13 +16,15 @@ export class PaymentsService {
   }
 
   async createOrder(total: number): Promise<{ id: string; links: any[] }> {
+    const rate = await this.getCopToUsdRate();
+    const usdTotal = (total * rate).toFixed(2);
     const request = new paypal.orders.OrdersCreateRequest();
     request.prefer('return=representation');
     request.requestBody({
       intent: 'CAPTURE',
       purchase_units: [
         {
-          amount: { currency_code: 'USD', value: total.toFixed(2) },
+          amount: { currency_code: 'USD', value: usdTotal },
         },
       ],
     });
@@ -35,5 +37,16 @@ export class PaymentsService {
     request.requestBody({});
     const response = await this.client.execute(request);
     return response.result.status === 'COMPLETED';
+  }
+  private async getCopToUsdRate(): Promise<number> {
+    try {
+      const res = await fetch(
+        'https://api.exchangerate.host/latest?base=COP&symbols=USD',
+      );
+      const data = await res.json();
+      return data?.rates?.USD ?? 1;
+    } catch {
+      return 1;
+    }
   }
 }

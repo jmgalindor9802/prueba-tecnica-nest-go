@@ -39,15 +39,18 @@ export class Order {
   @Column({ length: 100 })
   paymentMethod: string;
 
-   @Column({ length: 100, nullable: true })
+  @Column({ length: 100, nullable: true })
   paymentTransactionId?: string;
-  
+
+  @Column({ type: 'text', nullable: true })
+  paymentLink?: string;
+
   @Column({ type: 'text', nullable: true })
   notes?: string;
 
   @Column({ type: 'text', nullable: true })
   cancellationReason?: string;
-  
+
   @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.PENDING })
   status: OrderStatus;
 
