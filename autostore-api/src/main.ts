@@ -16,16 +16,25 @@ async function bootstrap() {
   );
 
   const config = new DocumentBuilder()
-    .setTitle('Autostore API')
-    .setDescription('API REST para tienda de autos')
+    .setTitle('Autostore API - Prueba técnica')
+     .setDescription(
+      'API REST para tienda de autos. Para consumir endpoints protegidos, primero inicia sesión en /auth/login, copia el token devuelto y pégalo en el campo value en botón Authorize.'
+    )
     .setVersion('1.0')
-    .addBearerAuth()
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description: 'Introduce el token con el formato: Bearer <token>',
+      }
+    )
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document, {
   swaggerOptions: {
     tagsSorter: (a, b) => {
-      const order = ['auth', 'users', 'vehicles']; // orden deseado
+      const order = ['auth', 'users', 'vehicles', 'orders']; // orden deseado
       return order.indexOf(a) - order.indexOf(b);
     },
   },

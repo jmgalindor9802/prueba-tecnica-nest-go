@@ -13,7 +13,13 @@ export class AuthController {
   @Post('login')
   @ApiOperation({ summary: 'Iniciar sesión y obtener un JWT' })
   @ApiBody({ type: LoginDto })
-  @ApiOkResponse({ description: 'Token JWT generado correctamente.' })
+    @ApiOkResponse({
+    description:
+      'Devuelve un token JWT. Copia el valor de access_token y utilízalo en Swagger pulsando Authorize y escribiendo: Bearer <token>.',
+    schema: {
+      example: { access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
+    },
+  })
   async login(@Request() req: any) {
     return this.authService.login(req.user);
   }

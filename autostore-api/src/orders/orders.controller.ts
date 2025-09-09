@@ -34,9 +34,22 @@ export class OrdersController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(Role.Admin, Role.Client)
     @ApiBearerAuth()
-    @ApiOperation({ summary: 'Crear una orden' })
-    @ApiCreatedResponse({ description: 'Orden creada', type: OrderResponseDto })
-    @ApiBody({ type: CreateOrderDto })
+    @ApiOperation({ summary: 'Crear una orden de compra (pago con PayPal)' })
+    @ApiCreatedResponse({ description: 'Orden creada' })
+    @ApiBody({
+      type: CreateOrderDto,
+      examples: {
+        ejemplo: {
+          summary: 'Pedido usando PayPal',
+          value: {
+            vehicleIds: [1],
+            shippingAddress: 'Calle Falsa 123',
+            paymentMethod: 'paypal',
+            notes: 'Entregar por la mañana',
+          },
+        },
+      },
+    })
     async create(@Req() req: any, @Body() dto: CreateOrderDto) {
         return this.ordersService.create(
             req.user.id,
@@ -105,7 +118,9 @@ export class OrdersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.Admin, Role.Client)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Capturar pago de PayPal' })
+    @ApiOperation({
+    summary: 'Capturar pago de PayPal tras la aprobación del usuario',
+  })
   async capturePayPal(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
     return this.ordersService.capturePayment(id, req.user.id, req.user.role);
   }

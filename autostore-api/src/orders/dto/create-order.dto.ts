@@ -19,13 +19,17 @@ export class CreateOrderDto {
   @Type(() => Number)
   @IsInt({ each: true })
   vehicleIds: number[];
-  
+
   @ApiProperty({ description: 'Dirección de envío' })
   @IsString()
   @MaxLength(255)
   shippingAddress: string;
 
-  @ApiProperty({ description: 'Método de pago' })
+  @ApiProperty({
+    description: 'Método de pago (actualmente solo se acepta "paypal")',
+    example: 'paypal',
+    enum: ['paypal'],
+  })
   @IsString()
   @MaxLength(100)
   paymentMethod: string;
