@@ -128,6 +128,7 @@ describe('OrdersService', () => {
     orderRepo.findOne.mockResolvedValue({
       id: 1,
       status: OrderStatus.PENDING,
+      user: { id: 1 },
     } as Order);
     (orderRepo as any).save = jest.fn(async (o: any) => o);
 

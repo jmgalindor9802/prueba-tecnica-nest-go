@@ -11,6 +11,7 @@ import { VehiclesService } from '../vehicles/vehicles.service';
 import { Role } from '../users/entities/role.enum';
 import { PaymentsService } from '../payments/payments.service';
 import { RedisService } from '../redis/redis.service';
+const LIST_TTL_MS = 2 * 60 * 1000;
 
 @Injectable()
 export class OrdersService {
@@ -21,7 +22,7 @@ export class OrdersService {
     private readonly dataSource: DataSource,
     private readonly paymentsService: PaymentsService,
     private readonly redisService: RedisService,
-  ) {}
+  ) { }
 
   async create(
     userId: number,
@@ -76,6 +77,8 @@ export class OrdersService {
     });
 
     await this.redisService.set(`order:${created.id}`, created);
+    await this.redisService.del('orders:list:admin');
+    await this.redisService.del(`orders:list:user:${userId}`);
     return created;
   }
 
@@ -83,17 +86,24 @@ export class OrdersService {
     userId: number,
     role: Role,
   ): Promise<(Order & { links?: any[] })[]> {
+    const key =
+      role === Role.Admin ? 'orders:list:admin' : `orders:list:user:${userId}`;
+    const cached =
+      await this.redisService.get<(Order & { links?: any[] })[]>(key);
+    if (cached) return cached;
     const orders =
       role === Role.Admin
         ? await this.orderRepository.find({
-            relations: ['vehicles', 'user'],
-          })
+          relations: ['vehicles', 'user'],
+        })
         : await this.orderRepository.find({
-            where: { user: { id: userId } },
-            relations: ['vehicles', 'user'],
-          });
+          where: { user: { id: userId } },
+          relations: ['vehicles', 'user'],
+        });
 
-    return orders.map((o) => this.appendLinks(o));
+    const formatted = orders.map((o) => this.appendLinks(o));
+    await this.redisService.set(key, formatted, LIST_TTL_MS);
+    return formatted;
   }
 
   async findOne(
@@ -168,17 +178,24 @@ export class OrdersService {
     });
 
     await this.redisService.del(`order:${id}`);
+    await this.redisService.del('orders:list:admin');
+    await this.redisService.del(`orders:list:user:${order.user.id}`);
     return updated;
   }
 
   private async updateStatus(id: number, status: OrderStatus): Promise<Order> {
-    const order = await this.orderRepository.findOne({ where: { id } });
+    const order = await this.orderRepository.findOne({
+      where: { id },
+      relations: ['user'],
+    });
     if (!order) {
       throw new NotFoundException(`Orden con id ${id} no encontrada`);
     }
     order.status = status;
     const saved = await this.orderRepository.save(order);
     await this.redisService.del(`order:${id}`);
+    await this.redisService.del('orders:list:admin');
+    await this.redisService.del(`orders:list:user:${order.user.id}`);
     return saved;
   }
 
@@ -189,6 +206,7 @@ export class OrdersService {
   async capturePaymentByTransactionId(token: string): Promise<Order> {
     const order = await this.orderRepository.findOne({
       where: { paymentTransactionId: token },
+      relations: ['user'],
     });
     if (!order) {
       throw new NotFoundException(
@@ -203,6 +221,8 @@ export class OrdersService {
     order.status = OrderStatus.PAID;
     const saved = await this.orderRepository.save(order);
     await this.redisService.del(`order:${order.id}`);
+    await this.redisService.del('orders:list:admin');
+    await this.redisService.del(`orders:list:user:${order.user.id}`);
     return saved;
   }
 }

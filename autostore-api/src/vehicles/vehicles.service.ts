@@ -2,17 +2,14 @@
 import {
   Injectable,
   NotFoundException,
-  ConflictException, // 409 para duplicados (23505)
-  Inject,
+  ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, EntityManager } from 'typeorm';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import type { Cache } from 'cache-manager';
-
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { Vehicle } from './entities/vehicle.entity';
+import { RedisService } from '../redis/redis.service';
 
 const VEHICLE_TTL_MS = 10 * 60 * 1000; // 10 minutos para detalles
 const LIST_TTL_MS = 2 * 60 * 1000; // 2 min para listados
@@ -24,16 +21,16 @@ export class VehiclesService {
   constructor(
     @InjectRepository(Vehicle)
     private readonly vehicleRepository: Repository<Vehicle>,
-    @Inject(CACHE_MANAGER) private readonly cache: Cache,
+    private readonly redisService: RedisService,
   ) { }
 
   private async listKey(page: number, limit: number): Promise<string> {
-    const ver = (await this.cache.get<number>(LIST_VER_KEY)) ?? 1;
+    const ver = (await this.redisService.get<number>(LIST_VER_KEY)) ?? 1;
     return `vehicles:list:v${ver}:${page}:${limit}`;
   }
 
   private async bumpListVersion(): Promise<void> {
-    await this.cache.set(LIST_VER_KEY, Date.now(), 0); // 0 = sin TTL
+    await this.redisService.set(LIST_VER_KEY, Date.now(), 0); // 0 = sin TTL
   }
 
   async create(dto: CreateVehicleDto): Promise<Vehicle> {
@@ -60,7 +57,7 @@ export class VehiclesService {
     limit = Math.min(Math.max(1, limit), 50);
 
     const key = await this.listKey(page, limit);
-    const cached = await this.cache.get<{
+    const cached = await this.redisService.get<{
       data: Vehicle[];
       total: number;
       page: number;
@@ -74,20 +71,20 @@ export class VehiclesService {
     });
 
     const payload = { data, total, page, limit };
-    await this.cache.set(key, payload, LIST_TTL_MS);
+    await this.redisService.set(key, payload, LIST_TTL_MS);
     return payload;
   }
 
   async findOne(id: number): Promise<Vehicle> {
     const key = cacheKey(id);
-    const cached = await this.cache.get<Vehicle>(key);
+    const cached = await this.redisService.get<Vehicle>(key);
     if (cached) return cached;
 
     const vehicle = await this.vehicleRepository.findOne({ where: { id } });
     if (!vehicle) {
       throw new NotFoundException(`Vehículo con id ${id} no encontrado`);
     }
-    await this.cache.set(key, vehicle, VEHICLE_TTL_MS);
+    await this.redisService.set(key, vehicle, VEHICLE_TTL_MS);
     return vehicle;
   }
 
@@ -102,7 +99,7 @@ export class VehiclesService {
 
     try {
       const updated = await this.vehicleRepository.save(merged);
-      await this.cache.set(cacheKey(id), updated, VEHICLE_TTL_MS);
+      await this.redisService.set(cacheKey(id), updated, VEHICLE_TTL_MS);
       await this.bumpListVersion();
       return updated;
     } catch (error: any) {
@@ -115,10 +112,7 @@ export class VehiclesService {
       throw error;
     }
   }
-  async markAsUnavailable(
-    id: number,
-    manager?: EntityManager,
-  ): Promise<void> {
+  async markAsUnavailable(id: number, manager?: EntityManager): Promise<void> {
     const repo = manager
       ? manager.getRepository(Vehicle)
       : this.vehicleRepository;
@@ -128,13 +122,10 @@ export class VehiclesService {
     if (result.affected === 0) {
       throw new NotFoundException(`Vehículo con id ${id} no encontrado`);
     }
-    await this.cache.del(cacheKey(id));
+    await this.redisService.del(cacheKey(id));
     await this.bumpListVersion();
   }
-  async markAsAvailable(
-    id: number,
-    manager?: EntityManager,
-  ): Promise<void> {
+  async markAsAvailable(id: number, manager?: EntityManager): Promise<void> {
     const repo = manager
       ? manager.getRepository(Vehicle)
       : this.vehicleRepository;
@@ -144,7 +135,7 @@ export class VehiclesService {
     if (result.affected === 0) {
       throw new NotFoundException(`Vehículo con id ${id} no encontrado`);
     }
-    await this.cache.del(cacheKey(id));
+    await this.redisService.del(cacheKey(id));
     await this.bumpListVersion();
   }
   async remove(id: number): Promise<void> {
@@ -152,7 +143,7 @@ export class VehiclesService {
     if (result.affected === 0) {
       throw new NotFoundException(`Vehículo con id ${id} no encontrado`);
     }
-    await this.cache.del(cacheKey(id));
+    await this.redisService.del(cacheKey(id));
     await this.bumpListVersion();
   }
 }

@@ -9,7 +9,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: true });
 
   app.setGlobalPrefix('api/v1', {
-    exclude: ['paypal', 'paypal/(.*)'],
+    exclude: ['paypal', 'paypal/*path'],
   });
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
@@ -34,7 +34,7 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document, {
   swaggerOptions: {
     tagsSorter: (a, b) => {
-      const order = ['auth', 'users', 'vehicles', 'orders', 'payments']; // orden deseado
+      const order = ['auth', 'users', 'vehicles', 'orders', 'paypal']; // orden deseado
       return order.indexOf(a) - order.indexOf(b);
     },
   },

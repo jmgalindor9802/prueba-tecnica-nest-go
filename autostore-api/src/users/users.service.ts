@@ -15,6 +15,8 @@ import { promisify } from 'util';
 import { RedisService } from '../redis/redis.service';
 
 const scrypt = promisify(_scrypt);
+const LIST_TTL_MS = 2 * 60 * 1000;
+const LIST_VER_KEY = 'users:list:ver';
 
 @Injectable()
 export class UsersService {
@@ -22,12 +24,21 @@ export class UsersService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly redisService: RedisService,
-  ) {}
+  ) { }
 
   private async hashPassword(password: string): Promise<string> {
     const salt = randomBytes(16).toString('hex');
     const hash = (await scrypt(password, salt, 32)) as Buffer;
     return `${salt}:${hash.toString('hex')}`;
+  }
+
+  private async listKey(page: number, limit: number): Promise<string> {
+    const ver = (await this.redisService.get<number>(LIST_VER_KEY)) ?? 1;
+    return `users:list:v${ver}:${page}:${limit}`;
+  }
+
+  private async bumpListVersion(): Promise<void> {
+    await this.redisService.set(LIST_VER_KEY, Date.now(), 0);
   }
 
   // Crear usuario
@@ -41,6 +52,7 @@ export class UsersService {
       });
       const saved = await this.userRepository.save(newUser);
       await this.redisService.set(`user:${saved.id}`, saved);
+      await this.bumpListVersion();
       return saved;
     } catch (error: any) {
       if (error?.code === '23505') {
@@ -57,11 +69,21 @@ export class UsersService {
     page = 1,
     limit = 10,
   ): Promise<{ data: User[]; total: number; page: number; limit: number }> {
+    const key = await this.listKey(page, limit);
+    const cached = await this.redisService.get<{
+      data: User[];
+      total: number;
+      page: number;
+      limit: number;
+    }>(key);
+    if (cached) return cached;
     const [data, total] = await this.userRepository.findAndCount({
       skip: (page - 1) * limit,
       take: limit,
     });
-    return { data, total, page, limit };
+    const payload = { data, total, page, limit };
+    await this.redisService.set(key, payload, LIST_TTL_MS);
+    return payload;
   }
 
   async findOne(id: number): Promise<User> {
@@ -109,6 +131,7 @@ export class UsersService {
     try {
       const saved = await this.userRepository.save(user);
       await this.redisService.set(`user:${id}`, saved);
+      await this.bumpListVersion();
       return saved;
     } catch (error: any) {
       if (error?.code === '23505') {
@@ -126,5 +149,6 @@ export class UsersService {
       throw new NotFoundException(`Usuario con id ${id} no encontrado`);
     }
     await this.redisService.del(`user:${id}`);
+    await this.bumpListVersion();
   }
 }

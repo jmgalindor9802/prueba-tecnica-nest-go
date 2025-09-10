@@ -4,7 +4,7 @@ import request from 'supertest';
 import { VehiclesController } from '../src/vehicles/vehicles.controller';
 import { VehiclesService } from '../src/vehicles/vehicles.service';
 import { Repository } from 'typeorm';
-import { CacheModule } from '@nestjs/cache-manager';
+import { RedisService } from '../src/redis/redis.service';
 import { RolesGuard } from '../src/common/guards/roles.guard';
 import { Vehicle } from '../src/vehicles/entities/vehicle.entity';
 import { JwtModule, JwtService } from '@nestjs/jwt';
@@ -73,6 +73,20 @@ class MockVehicleRepository {
   }
 }
 
+class MockRedisService {
+  private store = new Map<string, any>();
+  async get<T>(key: string): Promise<T | null> {
+    return (this.store.get(key) as T) ?? null;
+  }
+  async set(key: string, value: unknown): Promise<void> {
+    this.store.set(key, value);
+  }
+  async del(key: string): Promise<void> {
+    this.store.delete(key);
+  }
+}
+
+
 describe('Vehicles endpoints (e2e)', () => {
   let app: INestApplication;
   let repo: MockVehicleRepository;
@@ -84,11 +98,7 @@ describe('Vehicles endpoints (e2e)', () => {
   beforeAll(async () => {
     repo = new MockVehicleRepository();
     const moduleRef: TestingModule = await Test.createTestingModule({
-      imports: [
-        CacheModule.register({ isGlobal: true }),
-        PassportModule,
-        JwtModule.register({ secret: 'test-secret' }),
-      ],
+      imports: [PassportModule, JwtModule.register({ secret: 'test-secret' })],
       controllers: [VehiclesController],
       providers: [
         VehiclesService,
@@ -100,6 +110,7 @@ describe('Vehicles endpoints (e2e)', () => {
           useValue: { getOrThrow: () => 'test-secret' },
         },
         { provide: Repository, useValue: repo },
+        { provide: RedisService, useClass: MockRedisService },
       ],
     }).compile();
 
