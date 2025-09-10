@@ -88,6 +88,23 @@ describe('OrdersService', () => {
         expect(vehiclesService.markAsAvailable).toHaveBeenCalledWith(2, manager);
     });
 
+      it('should keep entity instance when cancelling a pending order', async () => {
+        const order = {
+            id: 3,
+            status: OrderStatus.PENDING,
+            user: { id: 1 },
+            vehicles: [],
+            paymentLink: 'http://paypal',
+        } as any;
+        orderRepo.findOne.mockResolvedValue(order);
+        manager.save.mockImplementation(async (o) => {
+            expect(o).toBe(order);
+            return o as Order;
+        });
+
+        await service.cancel(3, 1, Role.Client);
+    });
+    
     it('should fail when cancelling a paid order', async () => {
         const order = {
             id: 2,

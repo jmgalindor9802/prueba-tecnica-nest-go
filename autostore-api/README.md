@@ -10,3 +10,10 @@ La API incluye dos endpoints especiales utilizados como URLs de retorno en el fl
 - `GET /paypal/cancel`: PayPal redirige a esta ruta cuando el usuario cancela el proceso. No se realiza ningún cargo y se responde con `{ status: 'CANCELLED' }`.
 
 Ambos endpoints aparecen al final de la documentación de Swagger bajo la etiqueta **payments**.
+
+
+## Cancelación de órdenes
+
+Para cancelar una orden utiliza `PATCH /orders/:id/cancel` enviando opcionalmente un cuerpo con `{ "reason": "motivo" }`.
+Solo las órdenes con estado `PENDING` pueden cancelarse. Intentar cancelar una orden ya pagada, enviada o previamente cancelada
+responderá con un error `400` y el mensaje `Solo se pueden cancelar órdenes pendientes`.

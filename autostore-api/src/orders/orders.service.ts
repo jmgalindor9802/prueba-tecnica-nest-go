@@ -108,16 +108,13 @@ export class OrdersService {
 
     private appendLinks(order: Order): Order & { links?: any[] } {
         if (order.status === OrderStatus.PENDING && order.paymentLink) {
-            return {
-                ...order,
-                links: [
-                    { href: order.paymentLink, rel: 'approve', method: 'GET' },
-                ],
-            };
+                     (order as any).links = [
+                { href: order.paymentLink, rel: 'approve', method: 'GET' },
+            ];
+        } else {
+            delete (order as any).paymentLink;
         }
-        const cleaned = { ...order } as any;
-        delete cleaned.paymentLink;
-        return cleaned;
+        return order;
     }
 
     async cancel(
