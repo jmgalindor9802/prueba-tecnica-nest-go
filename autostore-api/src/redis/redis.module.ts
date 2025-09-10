@@ -5,8 +5,7 @@ import Keyv from 'keyv';
 import KeyvRedis from '@keyv/redis';
 import { createClient } from '@redis/client';
 import { RedisService } from './redis.service';
-
-export const REDIS_CLIENT = 'REDIS_CLIENT';
+import { REDIS_CLIENT } from './redis.constants';
 
 @Global()
 @Module({
