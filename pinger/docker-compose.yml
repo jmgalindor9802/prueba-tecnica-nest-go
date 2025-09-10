@@ -1,0 +1,7 @@
+version: '3.9'
+services:
+  pinger:
+    build: .
+    cap_add:
+      - NET_RAW
+    command: ["-workers","100","-timeout","1s","-count","3","8.8.8.8","1.1.1.1"]
