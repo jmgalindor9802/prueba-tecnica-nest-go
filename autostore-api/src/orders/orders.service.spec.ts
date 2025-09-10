@@ -3,6 +3,7 @@ import { OrdersService } from './orders.service';
 import { Order, OrderStatus } from './entities/order.entity';
 import { VehiclesService } from '../vehicles/vehicles.service';
 import { Role } from '../users/entities/role.enum';
+import { BadRequestException } from '@nestjs/common';
 
 class MockManager {
     save = jest.fn();
@@ -85,6 +86,20 @@ describe('OrdersService', () => {
         const result = await service.cancel(1, 1, Role.Client, 'motivo');
         expect(result.status).toBe(OrderStatus.CANCELLED);
         expect(vehiclesService.markAsAvailable).toHaveBeenCalledWith(2, manager);
+    });
+
+    it('should fail when cancelling a paid order', async () => {
+        const order = {
+            id: 2,
+            status: OrderStatus.PAID,
+            user: { id: 1 },
+            vehicles: [],
+        } as any;
+        orderRepo.findOne.mockResolvedValue(order);
+
+        await expect(
+            service.cancel(2, 1, Role.Client, 'motivo'),
+        ).rejects.toBeInstanceOf(BadRequestException);
     });
 
     it('should update status to shipped', async () => {

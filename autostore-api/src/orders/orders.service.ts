@@ -130,7 +130,9 @@ export class OrdersService {
         if (order.status === OrderStatus.CANCELLED) {
             throw new BadRequestException('La orden ya está cancelada');
         }
-
+          if (order.status !== OrderStatus.PENDING) {
+            throw new BadRequestException('Solo se pueden cancelar órdenes pendientes');
+        }
         return this.dataSource.transaction(async (manager) => {
             order.status = OrderStatus.CANCELLED;
             order.cancellationReason = reason;
