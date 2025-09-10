@@ -2,7 +2,7 @@ import { Controller, Get, Query } from '@nestjs/common';
 import { OrdersService } from '../orders/orders.service';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
-@ApiTags('payments')
+@ApiTags('paypal')
 @Controller('paypal')
 export class PaymentsController {
     constructor(private readonly ordersService: OrdersService) { }
