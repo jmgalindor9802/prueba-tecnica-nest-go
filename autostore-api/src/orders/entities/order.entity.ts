@@ -36,7 +36,7 @@ export class Order {
   @Column({ length: 255 })
   shippingAddress: string;
 
-  @Column({ length: 100 })
+  @Column({ length: 100, default: 'paypal' })
   paymentMethod: string;
 
   @Column({ length: 100, nullable: true })

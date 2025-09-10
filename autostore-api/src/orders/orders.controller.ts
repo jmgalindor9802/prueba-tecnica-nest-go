@@ -44,7 +44,6 @@ export class OrdersController {
           value: {
             vehicleIds: [1],
             shippingAddress: 'Calle Falsa 123',
-            paymentMethod: 'paypal',
             notes: 'Entregar por la mañana',
           },
         },
@@ -55,7 +54,6 @@ export class OrdersController {
             req.user.id,
             dto.vehicleIds,
             dto.shippingAddress,
-            dto.paymentMethod,
             dto.notes,
         );
     }
@@ -96,15 +94,6 @@ export class OrdersController {
         );
     }
 
-    @Patch(':id/pay')
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(Role.Admin)
-    @ApiBearerAuth()
-    @ApiOperation({ summary: 'Marcar orden como pagada' })
-    async markAsPaid(@Param('id', ParseIntPipe) id: number) {
-        return this.ordersService.markAsPaid(id);
-    }
-
     @Patch(':id/ship')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.Admin)
@@ -112,16 +101,5 @@ export class OrdersController {
   @ApiOperation({ summary: 'Marcar orden como enviada' })
   async markAsShipped(@Param('id', ParseIntPipe) id: number) {
     return this.ordersService.markAsShipped(id);
-  }
-
-  @Post(':id/paypal/capture')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.Admin, Role.Client)
-  @ApiBearerAuth()
-    @ApiOperation({
-    summary: 'Capturar pago de PayPal tras la aprobación del usuario',
-  })
-  async capturePayPal(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
-    return this.ordersService.capturePayment(id, req.user.id, req.user.role);
   }
 }

@@ -25,15 +25,6 @@ export class CreateOrderDto {
   @MaxLength(255)
   shippingAddress: string;
 
-  @ApiProperty({
-    description: 'Método de pago (actualmente solo se acepta "paypal")',
-    example: 'paypal',
-    enum: ['paypal'],
-  })
-  @IsString()
-  @MaxLength(100)
-  paymentMethod: string;
-
   @ApiPropertyOptional({ description: 'Notas adicionales' })
   @IsOptional()
   @IsString()

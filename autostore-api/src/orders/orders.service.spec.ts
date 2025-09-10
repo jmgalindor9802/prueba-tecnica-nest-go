@@ -55,7 +55,7 @@ describe('OrdersService', () => {
         manager.create.mockImplementation((_, obj) => obj as Order);
         manager.save.mockImplementation(async (o) => o as Order);
 
-        const order = await service.create(1, [1], 'dir', 'paypal');
+        const order = await service.create(1, [1], 'dir');
 
         expect(order.total).toBe(100);
         expect(order.links).toEqual([
@@ -67,7 +67,7 @@ describe('OrdersService', () => {
     });
 
     it('should throw when vehicle ids duplicated', async () => {
-        await expect(service.create(1, [1, 1], 'a', 'b')).rejects.toBeInstanceOf(
+         await expect(service.create(1, [1, 1], 'a')).rejects.toBeInstanceOf(
             Error,
         );
     });
@@ -96,21 +96,6 @@ describe('OrdersService', () => {
 
         const order = await service.markAsShipped(1);
         expect(order.status).toBe(OrderStatus.SHIPPED);
-    });
-
-    it('should capture payment and mark as paid', async () => {
-        const order = {
-            id: 1,
-            status: OrderStatus.PENDING,
-            user: { id: 1 },
-            paymentTransactionId: 'paypal123',
-        } as any;
-        orderRepo.findOne.mockResolvedValue(order);
-        orderRepo.save = jest.fn(async (o: any) => o) as any;
-
-        const result = await service.capturePayment(1, 1, Role.Client);
-        expect(result.status).toBe(OrderStatus.PAID);
-        expect(paymentsService.captureOrder).toHaveBeenCalledWith('paypal123');
     });
 
       it('debería incluir el link de pago en findAll para órdenes pendientes', async () => {

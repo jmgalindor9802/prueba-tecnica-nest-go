@@ -25,7 +25,6 @@ export class OrdersService {
         userId: number,
         vehicleIds: number[],
         shippingAddress: string,
-        paymentMethod: string,
         notes?: string,
     ): Promise<Order & { links?: any[] }> {
         if (new Set(vehicleIds).size !== vehicleIds.length) {
@@ -44,16 +43,10 @@ export class OrdersService {
         }
 
         const total = vehicles.reduce((sum, v) => sum + v.price, 0);
-
-        let paymentTransactionId: string | undefined;
-        let links: any[] | undefined;
-        let paymentLink: string | undefined;
-        if (paymentMethod.toLowerCase() === 'paypal') {
-            const result = await this.paymentsService.createOrder(total);
-            paymentTransactionId = result.id;
-            links = result.links;
-            paymentLink = result.links?.find((l: any) => l.rel === 'approve')?.href;
-        }
+        const result = await this.paymentsService.createOrder(total);
+        const paymentTransactionId = result.id;
+        const links = result.links;
+        const paymentLink = result.links?.find((l: any) => l.rel === 'approve')?.href;
 
         return this.dataSource.transaction(async (manager) => {
             const order = manager.create(Order, {
@@ -61,7 +54,7 @@ export class OrdersService {
                 vehicles,
                 total,
                 shippingAddress,
-                paymentMethod,
+                paymentMethod: 'paypal',
                 paymentTransactionId,
                 paymentLink,
                 notes,
@@ -79,19 +72,19 @@ export class OrdersService {
         });
     }
 
-     async findAll(
+    async findAll(
         userId: number,
         role: Role,
     ): Promise<(Order & { links?: any[] })[]> {
         const orders =
             role === Role.Admin
                 ? await this.orderRepository.find({
-                      relations: ['vehicles', 'user'],
-                  })
+                    relations: ['vehicles', 'user'],
+                })
                 : await this.orderRepository.find({
-                      where: { user: { id: userId } },
-                      relations: ['vehicles', 'user'],
-                  });
+                    where: { user: { id: userId } },
+                    relations: ['vehicles', 'user'],
+                });
         return orders.map((o) => this.appendLinks(o));
     }
 
@@ -110,7 +103,7 @@ export class OrdersService {
         if (role !== Role.Admin && order.user.id !== userId) {
             throw new ForbiddenException('Acceso denegado');
         }
-          return this.appendLinks(order);
+        return this.appendLinks(order);
     }
 
     private appendLinks(order: Order): Order & { links?: any[] } {
@@ -160,28 +153,10 @@ export class OrdersService {
         return this.orderRepository.save(order);
     }
 
-    markAsPaid(id: number): Promise<Order> {
-        return this.updateStatus(id, OrderStatus.PAID);
-    }
-
     markAsShipped(id: number): Promise<Order> {
         return this.updateStatus(id, OrderStatus.SHIPPED);
     }
 
-    async capturePayment(id: number, userId: number, role: Role): Promise<Order> {
-        const order = await this.findOne(id, userId, role);
-        if (!order.paymentTransactionId) {
-            throw new BadRequestException('Orden sin transacción de pago');
-        }
-        const completed = await this.paymentsService.captureOrder(
-            order.paymentTransactionId,
-        );
-        if (!completed) {
-            throw new BadRequestException('Pago no completado');
-        }
-        order.status = OrderStatus.PAID;
-        return this.orderRepository.save(order);
-    }
     async capturePaymentByTransactionId(token: string): Promise<Order> {
         const order = await this.orderRepository.findOne({
             where: { paymentTransactionId: token },

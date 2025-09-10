@@ -20,9 +20,7 @@ describe('OrdersController', () => {
                         findAll: jest.fn(),
                         findOne: jest.fn(),
                         cancel: jest.fn(),
-                        markAsPaid: jest.fn(),
                         markAsShipped: jest.fn(),
-                        capturePayment: jest.fn(),
                     },
                 },
             ],
@@ -36,7 +34,6 @@ describe('OrdersController', () => {
         const dto: CreateOrderDto = {
             vehicleIds: [1],
             shippingAddress: 'Calle 1',
-            paymentMethod: 'tarjeta',
         } as any;
         (service.create as jest.Mock).mockResolvedValue('created');
 
@@ -47,7 +44,6 @@ describe('OrdersController', () => {
             1,
             dto.vehicleIds,
             dto.shippingAddress,
-            dto.paymentMethod,
             dto.notes,
         );
     });
@@ -77,23 +73,9 @@ describe('OrdersController', () => {
         expect(service.cancel).toHaveBeenCalledWith(3, 1, Role.Client, dto.reason);
     });
 
-    it('should delegate mark as paid', async () => {
-        (service.markAsPaid as jest.Mock).mockResolvedValue('paid');
-        await expect(controller.markAsPaid(4)).resolves.toBe('paid');
-        expect(service.markAsPaid).toHaveBeenCalledWith(4);
-    });
-
     it('should delegate mark as shipped', async () => {
     (service.markAsShipped as jest.Mock).mockResolvedValue('shipped');
     await expect(controller.markAsShipped(5)).resolves.toBe('shipped');
     expect(service.markAsShipped).toHaveBeenCalledWith(5);
-  });
-
-  it('should delegate PayPal capture', async () => {
-    (service.capturePayment as jest.Mock).mockResolvedValue('captured');
-    await expect(
-      controller.capturePayPal({ user: { id: 1, role: Role.Client } }, 6),
-    ).resolves.toBe('captured');
-    expect(service.capturePayment).toHaveBeenCalledWith(6, 1, Role.Client);
   });
 });
