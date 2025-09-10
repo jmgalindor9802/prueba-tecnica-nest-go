@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { RedisService } from '../redis/redis.service';
 import {
     Client,
     Environment,
@@ -11,7 +12,7 @@ export class PaymentsService {
     private client: Client;
     private ordersController: OrdersController;
 
-    constructor() {
+    constructor(private readonly redisService: RedisService) {
         const clientId = process.env.PAYPAL_CLIENT_ID ?? '';
         const clientSecret = process.env.PAYPAL_CLIENT_SECRET ?? '';
         const environment =
@@ -51,9 +52,20 @@ export class PaymentsService {
     }
 
     async captureOrder(orderId: string): Promise<boolean> {
-        const { result } = await this.ordersController.captureOrder({ id: orderId });
-        return result.status === 'COMPLETED';
+        //  evita capturar dos veces la misma orden
+        const lockKey = `payment:lock:${orderId}`;
+        const acquired = await this.redisService.lock(lockKey, 5 * 60 * 1000); // 5 minutos
+        if (!acquired) {
+            return false;
+        }
+        try {
+            const { result } = await this.ordersController.captureOrder({ id: orderId });
+            return String(result.status) === 'COMPLETED';
+        } finally {
+            await this.redisService.unlock(lockKey);
+        }
     }
+
     private async getCopToUsdRate(): Promise<number> {
         try {
             const params = new URLSearchParams({

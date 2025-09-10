@@ -7,6 +7,7 @@ import { NotFoundException, BadRequestException } from '@nestjs/common';
 describe('UsersService', () => {
   let service: UsersService;
   let repository: jest.Mocked<Repository<User>>;
+  let redis: { set: jest.Mock; get: jest.Mock; del: jest.Mock };
 
   beforeEach(() => {
     repository = {
@@ -17,7 +18,8 @@ describe('UsersService', () => {
       delete: jest.fn(),
     } as unknown as jest.Mocked<Repository<User>>;
 
-    service = new UsersService(repository as any);
+    redis = { set: jest.fn(), get: jest.fn(), del: jest.fn() };
+    service = new UsersService(repository as any, redis as any);
   });
 
   it('should create user with hashed password and default role', async () => {

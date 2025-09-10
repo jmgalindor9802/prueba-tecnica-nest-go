@@ -5,55 +5,42 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { VehiclesModule } from './vehicles/vehicles.module';
-import { CacheModule } from '@nestjs/cache-manager';
-import Keyv from 'keyv';
-import KeyvRedis from '@keyv/redis';
 import { AuthModule } from './auth/auth.module';
 import { OrdersModule } from './orders/orders.module';
 import { PaymentsModule } from './payments/payments.module';
+import { RedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
     ...(process.env.NODE_ENV === 'test'
       ? []
       : [
-        // Configuración global de variables de entorno
-        ConfigModule.forRoot({ isGlobal: true }),
-        // Configuración de TypeORM con variables de entorno
-        TypeOrmModule.forRootAsync({
-
-          inject: [ConfigService],
-          useFactory: (config: ConfigService) => ({
-            type: 'postgres',
-            host: config.get<string>('DB_HOST'),
-            port: config.get<number>('DB_PORT'),
-            username: config.get<string>('DB_USER'),
-            password: config.get<string>('DB_PASS'),
-            database: config.get<string>('DB_NAME'),
-            autoLoadEntities: true,
-            synchronize: true,
+          // Configuración global de variables de entorno
+          ConfigModule.forRoot({ isGlobal: true }),
+          // Configuración de TypeORM con variables de entorno
+          TypeOrmModule.forRootAsync({
+            inject: [ConfigService],
+            useFactory: (config: ConfigService) => ({
+              type: 'postgres',
+              host: config.get<string>('DB_HOST'),
+              port: config.get<number>('DB_PORT'),
+              username: config.get<string>('DB_USER'),
+              password: config.get<string>('DB_PASS'),
+              database: config.get<string>('DB_NAME'),
+              autoLoadEntities: true,
+              synchronize: true,
+            }),
           }),
-        }),
-        CacheModule.registerAsync({
-          isGlobal: true,
-          inject: [ConfigService],
-          useFactory: (config: ConfigService) => {
-            const url =
-              config.get<string>('REDIS_URL') ?? 'redis://redis:6379';
-            return {
-              stores: [new Keyv({ store: new KeyvRedis(url) })],
-            };
-          },
-        }),
-
-        UsersModule,
-        VehiclesModule,
-        AuthModule,
-        OrdersModule,
-        PaymentsModule,
-      ]),
+          // Nuevo módulo centralizado de Redis
+          RedisModule,
+          UsersModule,
+          VehiclesModule,
+          AuthModule,
+          OrdersModule,
+          PaymentsModule,
+        ]),
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}

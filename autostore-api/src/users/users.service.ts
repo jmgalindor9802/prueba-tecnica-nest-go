@@ -12,6 +12,7 @@ import { User } from './entities/user.entity';
 import { Role } from './entities/role.enum';
 import { randomBytes, scrypt as _scrypt } from 'crypto';
 import { promisify } from 'util';
+import { RedisService } from '../redis/redis.service';
 
 const scrypt = promisify(_scrypt);
 
@@ -20,6 +21,7 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly redisService: RedisService,
   ) {}
 
   private async hashPassword(password: string): Promise<string> {
@@ -28,7 +30,7 @@ export class UsersService {
     return `${salt}:${hash.toString('hex')}`;
   }
 
-  //Crear usuario
+  // Crear usuario
   async create(createUserDto: CreateUserDto): Promise<User> {
     try {
       const hashed = await this.hashPassword(createUserDto.password);
@@ -37,7 +39,9 @@ export class UsersService {
         role: createUserDto.role ?? Role.Client,
         password: hashed,
       });
-      return await this.userRepository.save(newUser);
+      const saved = await this.userRepository.save(newUser);
+      await this.redisService.set(`user:${saved.id}`, saved);
+      return saved;
     } catch (error: any) {
       if (error?.code === '23505') {
         // 23505 = unique_violation en Postgres
@@ -61,10 +65,15 @@ export class UsersService {
   }
 
   async findOne(id: number): Promise<User> {
+    const key = `user:${id}`;
+    const cached = await this.redisService.get<User>(key);
+    if (cached) return cached;
+
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException(`Usuario con id ${id} no encontrado`);
     }
+    await this.redisService.set(key, user);
     return user;
   }
 
@@ -98,7 +107,9 @@ export class UsersService {
       }
     }
     try {
-      return await this.userRepository.save(user);
+      const saved = await this.userRepository.save(user);
+      await this.redisService.set(`user:${id}`, saved);
+      return saved;
     } catch (error: any) {
       if (error?.code === '23505') {
         throw new BadRequestException(
@@ -114,5 +125,6 @@ export class UsersService {
     if (result.affected === 0) {
       throw new NotFoundException(`Usuario con id ${id} no encontrado`);
     }
+    await this.redisService.del(`user:${id}`);
   }
 }
