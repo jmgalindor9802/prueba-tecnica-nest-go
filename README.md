@@ -7,6 +7,8 @@ Este repositorio contiene dos retos independientes:
 
 Cada proyecto cuenta con su propio archivo `docker-compose.yml` que facilita la ejecución local.
 
+> **Nota:** por tratarse de un repositorio de prueba, los `docker-compose.yml` están configurados para cargar variables de entorno desde `.env.example`. Si necesitas personalizarlas, copia ese archivo a `.env` y ajusta sus valores.
+
 ## Ejecución rápida
 
 Para levantar cada servicio de forma aislada, ingresa a la carpeta del proyecto que desees probar y ejecuta:
