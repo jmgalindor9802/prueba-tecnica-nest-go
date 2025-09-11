@@ -18,7 +18,7 @@ async function bootstrap() {
   const config = new DocumentBuilder()
     .setTitle('Autostore API - Prueba técnica')
      .setDescription(
-      'API REST para tienda de autos. Para consumir endpoints protegidos, primero inicia sesión en /auth/login, copia el token devuelto y pégalo en el campo value en botón Authorize.'
+      'API REST para tienda de autos. Para consumir endpoints protegidos, primero inicia sesión en /auth/login, copia el token devuelto y pégalo en el campo value en botón Authorize.\n\nUsuario administrador inicial:\n- correo: admin@autostore.com\n- contraseña: admin123'
     )
     .setVersion('1.0')
     .addBearerAuth(
