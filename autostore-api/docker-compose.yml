@@ -22,7 +22,6 @@ services:
   autostore_api:
     build: .
     env_file:
-      - .env
       - .env.example
     container_name: autostore_api
     restart: always
