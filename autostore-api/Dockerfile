@@ -19,4 +19,4 @@ RUN npm ci --omit=dev
 COPY --from=builder /usr/src/app/dist ./dist
 
 EXPOSE 3000
-CMD ["node", "dist/main.js"]
+CMD ["sh", "-c", "node dist/scripts/seed-admin.js && node dist/main.js"]

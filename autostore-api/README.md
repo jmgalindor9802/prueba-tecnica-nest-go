@@ -2,6 +2,21 @@
 
 Este repositorio contiene la API **Autostore**, desarrollada con NestJS como parte de la prueba técnica.
 
+## Usuario administrador inicial
+
+Al construir el contenedor la semilla se ejecuta automáticamente para crear el primer administrador. 
+En entornos locales también puedes ejecutarla manualmente:
+
+```bash
+npm run seed:admin
+```
+
+La semilla inserta un usuario con las siguientes credenciales:
+
+- **correo**: `admin@autostore.com`
+- **contraseña**: `admin123`
+
+
 ## Endpoints de PayPal
 
 La API incluye dos endpoints especiales utilizados como URLs de retorno en el flujo de pago de PayPal:

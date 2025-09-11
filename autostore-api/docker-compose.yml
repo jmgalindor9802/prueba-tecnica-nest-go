@@ -44,7 +44,7 @@ services:
       - EXCHANGE_RATE_API_KEY=74750f7ecce959162d511e722a901a64
     ports:
       - "3000:3000"
-    command: ["node", "dist/main.js"] 
+    command: ["sh", "-c", "node dist/scripts/seed-admin.js && node dist/main.js"]
 
 volumes:
   db_data:
