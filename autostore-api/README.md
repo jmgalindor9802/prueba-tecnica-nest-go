@@ -1,6 +1,6 @@
-# Prueba técnica NestJS/Go
+# Autostore API
 
-Este repositorio contiene la API **Autostore**, desarrollada con NestJS como parte de la prueba técnica.
+API construida con [NestJS](https://nestjs.com/) como parte de la prueba técnica. Expone endpoints para gestionar usuarios, vehiculos, órdenes y pagos.
 
 ## Usuario administrador inicial
 

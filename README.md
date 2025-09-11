@@ -2,11 +2,18 @@
 
 Este repositorio contiene dos retos independientes:
 
-- **autostore-api/**: API REST en NestJS para una tienda virtual de productos de autos. Su archivo `docker-compose.yml` se encuentra dentro de esta carpeta.
-- **pinger/**: script en Go que realiza ping ICMP concurrente a múltiples equipos de red. También cuenta con su propio `docker-compose.yml`.
+- **autostore-api/**: API REST construida con NestJS para administrar una tienda virtual de autos.
+- **pinger/**: servicio en Go que realiza pings ICMP de forma concurrente a múltiples equipos de red.
 
-Para ejecutar cualquiera de los proyectos, navega a la carpeta correspondiente y corre:
+Cada proyecto cuenta con su propio archivo `docker-compose.yml` que facilita la ejecución local.
+
+## Ejecución rápida
+
+Ingresa a la carpeta del proyecto que desees probar y ejecuta:
 
 ```bash
 docker compose up --build
 ```
+```
+
+Consulta el README de cada subcarpeta para instrucciones detalladas de configuración y uso.
