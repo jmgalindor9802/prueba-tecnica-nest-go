@@ -23,6 +23,7 @@ async function seed() {
   }
 
   await app.close();
+  process.exit(0);
 }
 
 seed().catch((err) => {
