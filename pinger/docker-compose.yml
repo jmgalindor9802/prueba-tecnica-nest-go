@@ -5,6 +5,12 @@ services:
       - NET_RAW
     volumes:
       - ./targets.txt:/targets.txt:ro
-    command: ["-workers","100","-timeout","1s","-count","3"]
+    command:
+      - "-workers"
+      - "${WORKERS:-100}"
+      - "-timeout"
+      - "${TIMEOUT:-1s}"
+      - "-count"
+      - "${COUNT:-3}"
     ports:
       - "8080:8080"
