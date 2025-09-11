@@ -21,7 +21,7 @@ services:
       - "6379:6379"
 
   autostore_api:
-    build: ./autostore-api
+    build: .
     env_file:
       - .env
     container_name: autostore_api
