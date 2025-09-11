@@ -49,11 +49,22 @@ func worker(id int, jobs <-chan string, results chan<- PingResult, timeout time.
 		results <- result
 	}
 }
+// generateTargets simula la creación de 3000 direcciones IP consecutiva
+func generateTargets() []string {
+	targets := make([]string, 0, 3000)
+	for i := 0; i <= 11 && len(targets) < 3000; i++ {
+		for j := 1; j <= 254 && len(targets) < 3000; j++ {
+			targets = append(targets, fmt.Sprintf("192.168.%d.%d", i, j))
+		}
+	}
+	return targets
+}
+
 
 func readTargets(file string, args []string) ([]string, error) {
 	if file == "" {
 		if len(args) == 0 {
-			return nil, fmt.Errorf("no targets provided")
+			return generateTargets(), nil
 		}
 		return args, nil
 	}
@@ -79,7 +90,7 @@ func readTargets(file string, args []string) ([]string, error) {
 }
 
 func main() {
-	workers := flag.Int("workers", 100, "number of concurrent workers")
+	workers := flag.Int("workers", 0, "number of concurrent workers (0 = number of targets)")
 	timeout := flag.Duration("timeout", time.Second, "timeout per target")
 	count := flag.Int("count", 1, "number of echo requests per target")
 	file := flag.String("file", "", "file with targets (one per line)")
@@ -88,6 +99,10 @@ func main() {
 	targets, err := readTargets(*file, flag.Args())
 	if err != nil {
 		log.Fatalf("error reading targets: %v", err)
+	}
+
+	if *workers <= 0 || *workers > len(targets) {
+		*workers = len(targets)
 	}
 
 	jobs := make(chan string)
