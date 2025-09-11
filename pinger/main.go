@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"strings"
@@ -16,10 +17,17 @@ import (
 )
 
 type PingResult struct {
-	IP        string        `json:"ip"`
-	Reachable bool          `json:"reachable"`
+	IP        string  `json:"ip"`
+	Reachable bool    `json:"reachable"`
 	LatencyMS float64 `json:"latency_ms"`
-	Err       string        `json:"error,omitempty"`
+	Err       string  `json:"error,omitempty"`
+}
+
+var realTargets = []string{
+	"8.8.8.8",
+	"1.1.1.1",
+	"208.67.222.222",
+	"9.9.9.9",
 }
 
 func worker(id int, jobs <-chan string, results chan<- PingResult, timeout time.Duration, count int) {
@@ -49,17 +57,20 @@ func worker(id int, jobs <-chan string, results chan<- PingResult, timeout time.
 		results <- result
 	}
 }
-// generateTargets simula la creación de 3000 direcciones IP consecutiva
+
+// generateTargets mezcla algunas IPs reales con direcciones locales hasta llegar a 3000
 func generateTargets() []string {
 	targets := make([]string, 0, 3000)
+	targets = append(targets, realTargets...)
 	for i := 0; i <= 11 && len(targets) < 3000; i++ {
 		for j := 1; j <= 254 && len(targets) < 3000; j++ {
 			targets = append(targets, fmt.Sprintf("192.168.%d.%d", i, j))
 		}
 	}
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(targets), func(i, j int) { targets[i], targets[j] = targets[j], targets[i] })
 	return targets
 }
-
 
 func readTargets(file string, args []string) ([]string, error) {
 	if file == "" {
@@ -90,7 +101,7 @@ func readTargets(file string, args []string) ([]string, error) {
 }
 
 func main() {
-	workers := flag.Int("workers", 0, "number of concurrent workers (0 = number of targets)")
+	workers := flag.Int("workers", 100, "number of concurrent workers")
 	timeout := flag.Duration("timeout", time.Second, "timeout per target")
 	count := flag.Int("count", 1, "number of echo requests per target")
 	file := flag.String("file", "", "file with targets (one per line)")
@@ -99,10 +110,6 @@ func main() {
 	targets, err := readTargets(*file, flag.Args())
 	if err != nil {
 		log.Fatalf("error reading targets: %v", err)
-	}
-
-	if *workers <= 0 || *workers > len(targets) {
-		*workers = len(targets)
 	}
 
 	jobs := make(chan string)
@@ -152,7 +159,7 @@ func main() {
 	http.HandleFunc("/results", func(w http.ResponseWriter, r *http.Request) {
 		storeMu.Lock()
 		defer storeMu.Unlock()
-		w.Header().Set("Content-Type", "application/json")
+
 		resp := struct {
 			TotalTargets int          `json:"total_targets"`
 			Processed    int          `json:"processed"`
@@ -162,6 +169,8 @@ func main() {
 			Processed:    len(resultStore),
 			Results:      resultStore,
 		}
+
+		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(resp); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}

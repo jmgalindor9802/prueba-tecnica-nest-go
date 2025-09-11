@@ -3,7 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"math/rand"
 	"os"
+	"time"
 )
 
 func main() {
@@ -16,11 +18,15 @@ func main() {
 	}
 	defer f.Close()
 
-	count := 0
-	for i := 0; i <= 11 && count < 3000; i++ {
-		for j := 1; j <= 254 && count < 3000; j++ {
-			fmt.Fprintf(f, "192.168.%d.%d\n", i, j)
-			count++
+	targets := make([]string, 0, 3000)
+	realTargets := []string{"8.8.8.8", "1.1.1.1", "208.67.222.222", "9.9.9.9"}
+	targets = append(targets, realTargets...)
+
+	for i := 0; i <= 11 && len(targets) < 3000; i++ {
+		for j := 1; j <= 254 && len(targets) < 3000; j++ {
+			targets = append(targets, fmt.Sprintf("192.168.%d.%d", i, j))
 		}
 	}
-}
+
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(targets), func(i, j int) { targets[i], targets[j] = targets
