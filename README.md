@@ -9,11 +9,17 @@ Cada proyecto cuenta con su propio archivo `docker-compose.yml` que facilita la 
 
 ## Ejecución rápida
 
-Ingresa a la carpeta del proyecto que desees probar y ejecuta:
+Para levantar cada servicio de forma aislada, ingresa a la carpeta del proyecto que desees probar y ejecuta:
 
 ```bash
 docker compose up --build
 ```
+
+Si prefieres ejecutar los servicios desde la raíz del repositorio, especifica el archivo de composición y un nombre de proyecto para evitar que se mezclen:
+
+```bash
+docker compose -f autostore-api/docker-compose.yml -p autostore-api up --build
+docker compose -f pinger/docker-compose.yml -p pinger up --build
 ```
 
 Consulta el README de cada subcarpeta para instrucciones detalladas de configuración y uso.

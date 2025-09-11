@@ -16,7 +16,18 @@ La semilla inserta un usuario con las siguientes credenciales:
 - **correo**: `admin@autostore.com`
 - **contraseña**: `admin123`
 
+## Detalles adicionales de los endpoints
 
+- **`POST /users`**: permite registrar usuarios sin autenticación siempre que el rol sea `Client`. Si se especifica otro rol,
+  es obligatorio enviar un token de un administrador.
+- **`POST /orders`**: la respuesta incluye un arreglo `links` con la URL de aprobación de PayPal cuando la orden está pendiente.
+  Los vehículos solicitados quedan bloqueados hasta completar o cancelar el pago.
+- **`GET /orders`** y **`GET /orders/:id`**: un cliente solo puede ver sus propias órdenes, mientras que un administrador puede
+  listar y consultar cualquier orden.
+- **`PATCH /orders/:id/ship`**: endpoint exclusivo para administradores que marca la orden como enviada (`SHIPPED`).
+- **Endpoints de vehículos**: crear, actualizar o eliminar vehículos requiere rol `Admin`. El VIN debe ser único y el listado
+  admite paginación con un límite máximo de 50 registros por página.
+  
 ## Endpoints de PayPal
 
 La API incluye dos endpoints especiales utilizados como URLs de retorno en el flujo de pago de PayPal:
