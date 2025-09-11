@@ -53,11 +53,14 @@ export class UsersController {
   })
   @ApiBadRequestResponse({ description: 'Datos inválidos.' })
   @ApiConflictResponse({ description: 'Correo ya está en uso.' })
-   async create(@Body() createUserDto: CreateUserDto, @Req() req: any) {
-    if (createUserDto.role !== Role.Client && !req.user) {
-      throw new UnauthorizedException();
+  async create(@Body() createUserDto: CreateUserDto, @Req() req: any) {
+    const role = createUserDto.role ?? Role.Client;
+    if (role !== Role.Client) {
+      if (!req.user || req.user.role !== Role.Admin) {
+        throw new UnauthorizedException();
+      }
     }
-    return this.usersService.create(createUserDto);
+    return this.usersService.create({ ...createUserDto, role });
   }
 
   @Get()
