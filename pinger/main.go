@@ -18,7 +18,7 @@ import (
 type PingResult struct {
 	IP        string        `json:"ip"`
 	Reachable bool          `json:"reachable"`
-	Latency   time.Duration `json:"latency"`
+	LatencyMS float64 `json:"latency_ms"`
 	Err       string        `json:"error,omitempty"`
 }
 
@@ -41,9 +41,10 @@ func worker(id int, jobs <-chan string, results chan<- PingResult, timeout time.
 		stats := pinger.Statistics()
 		result.Reachable = stats.PacketsRecv > 0
 		if result.Reachable {
-			result.Latency = stats.AvgRtt
+			result.LatencyMS = float64(stats.AvgRtt) / float64(time.Millisecond)
 		} else {
 			result.Err = "timeout"
+			result.LatencyMS = 0
 		}
 		results <- result
 	}
@@ -113,6 +114,8 @@ func main() {
 		close(results)
 	}()
 
+	totalTargets := len(targets)
+
 	var (
 		resultStore []PingResult
 		storeMu     sync.Mutex
@@ -123,7 +126,7 @@ func main() {
 			if res.Err != "" || !res.Reachable {
 				fmt.Printf("%s unreachable: %v\n", res.IP, res.Err)
 			} else {
-				fmt.Printf("%s reachable in %v\n", res.IP, res.Latency)
+				fmt.Printf("%s reachable in %.2fms\n", res.IP, res.LatencyMS)
 			}
 			storeMu.Lock()
 			resultStore = append(resultStore, res)
@@ -135,7 +138,16 @@ func main() {
 		storeMu.Lock()
 		defer storeMu.Unlock()
 		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(resultStore); err != nil {
+		resp := struct {
+			TotalTargets int          `json:"total_targets"`
+			Processed    int          `json:"processed"`
+			Results      []PingResult `json:"results"`
+		}{
+			TotalTargets: totalTargets,
+			Processed:    len(resultStore),
+			Results:      resultStore,
+		}
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	})

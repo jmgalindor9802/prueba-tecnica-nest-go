@@ -3,6 +3,8 @@ services:
     build: .
     cap_add:
       - NET_RAW
-    command: ["-workers","100","-timeout","1s","-count","3","8.8.8.8","1.1.1.1"]
+    volumes:
+      - ./targets.txt:/targets.txt:ro
+    command: ["-workers","100","-timeout","1s","-count","3","-file","/targets.txt"]
     ports:
       - "8080:8080"
